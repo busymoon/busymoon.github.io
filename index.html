@@ -71,6 +71,1000 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-day4-summary" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/13/day4-summary/" class="article-date">
+  <time class="dt-published" datetime="2026-09-13T02:30:00.000Z" itemprop="datePublished">2026-09-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h3 id="今日-Agent-学习要点"><a href="#今日-Agent-学习要点" class="headerlink" title="今日 Agent 学习要点"></a>今日 Agent 学习要点</h3><p><strong>Q1：什么是 Skill？</strong><br>A：Agent 中一项可复用的能力，类似软件工程中的 Service &#x2F; Capability。</p>
+<p><strong>Q2：什么是 Prompt？</strong><br>A：指导 LLM 执行某个认知动作的 Instructions，是 Skill 的组成部分之一。</p>
+<p><strong>Q3：Skill 和 Prompt 的关系是什么？</strong><br>A：Skill ≠ Prompt。一个 Skill 可以包含 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Output Schema、Eval 等，也可以包含多次 LLM 调用。</p>
+<p><strong>Q4：Workflow 和 Skill 的关系是什么？</strong><br>A：Workflow 负责组织多个 Skill&#x2F;Tool 完成整体目标；Skill 负责提供具体能力。</p>
+<p><strong>Q5：Prompt、Context 的区别是什么？</strong><br>A：Prompt 决定“怎么做”；Context 决定“这一次做的时候知道什么”。</p>
+<p><strong>Q6：Taxonomy 是什么？</strong><br>A：定义系统中“有哪些概念&#x2F;答案”。</p>
+<p><strong>Q7：Decision Policy 是什么？</strong><br>A：定义如何根据证据从多个候选答案中做出判断。</p>
+<p><strong>Q8：Few-shot 是什么？</strong><br>A：通过具体案例向模型示范如何应用抽象的 Policy。</p>
+<p><strong>Q9：Tool 是什么？</strong><br>A：Agent 用于获取信息、执行计算、验证结果或改变外部环境的确定性能力。</p>
+<p><strong>Q10：什么时候应该用 Tool，而不是 LLM？</strong><br>A：能够通过确定性计算、查询、验证或转换得到的结果，优先交给 Tool。</p>
+<p><strong>Q11：Eval 是什么？</strong><br>A：衡量 Skill&#x2F;Agent 是否正确，以及修改后是否真正改善、是否产生 Regression。</p>
+<p><strong>Q12：Agent 的核心运行循环是什么？</strong><br>A：<code>Observe → Decide → Act → Observe</code>，直到 Goal 完成或终止。</p>
+<p><strong>Q13：Observe 是什么？</strong><br>A：Agent 获取当前环境、任务和工具执行结果等信息。</p>
+<p><strong>Q14：Decide 是什么？</strong><br>A：根据 Goal、State、Context、Policy 和 Available Actions 决定下一步行动。</p>
+<p><strong>Q15：Act 是什么？</strong><br>A：调用 Tool、Skill、Human 等执行 Decision，产生新的 Observation。</p>
+<p><strong>Q16：为什么同一个错误结果可能有不同原因？</strong><br>A：可能是 Observe 信息缺失、Decide 判断错误，也可能是 Act 执行错误，需要 Failure Decomposition。</p>
+<p><strong>Q17：什么是 State？</strong><br>A：描述当前任务“现在做到哪里、处于什么状态”。</p>
+<p><strong>Q18：什么是 Context？</strong><br>A：为了当前这一次 Decision，选择让模型看到的信息。</p>
+<p><strong>Q19：什么是 Memory？</strong><br>A：从过去经历中保留下来、未来任务可能再次使用的信息。</p>
+<p><strong>Q20：什么是 History？</strong><br>A：记录过去发生过什么；History 是“怎么走到这里”，State 是“现在在哪里”。</p>
+<p><strong>Q21：Memory 和 Knowledge 有什么区别？</strong><br>A：Memory 主要来自历史运行和交互经验；Knowledge 是相对稳定、权威、经过治理的外部知识。</p>
+<p><strong>Q22：Memory 是否一定要变成 Knowledge？</strong><br>A：不一定。只有经过审核、治理后，部分 Memory 才可能沉淀为正式 Knowledge。</p>
+<p><strong>Q23：Memory 如何影响未来 Decision？</strong><br>A：<code>Memory → Retrieval → Context → LLM → Decision</code>。</p>
+<p><strong>Q24：Memory 系统最核心的两个问题是什么？</strong><br>A：什么时候记（Memory Write Policy）和什么时候想起来（Memory Retrieval Policy）。</p>
+<p><strong>Q25：State、Context、Memory 最简单的记忆方式是什么？</strong><br>A：<code>State = Where am I?</code>；<code>Context = What do I need to know now?</code>；<code>Memory = What from the past should I remember?</code></p>
+<p><strong>Q26：Context 的信息可以来自哪里？</strong><br>A：State、Observation、History、Memory、Knowledge、Tool Results、用户输入等。</p>
+<p><strong>Q27：Context Engineering 的核心是什么？</strong><br>A：为当前 Goal + State + Decision 选择最合适的信息，而不是简单把所有信息塞给 LLM。</p>
+<p><strong>Q28：Agent 架构设计中的重要原则是什么？</strong><br>A：结果错误时不要默认“改 Prompt”，先定位错误属于 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Workflow、State&#x2F;Memory 还是其他层。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/13/day4-summary/" data-id="cuidPXyCgn83_Vk8DSvnv7Fw1" data-title="Day4 - 学习总结" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-day4-lession 2" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/13/day4-lession%202/" class="article-date">
+  <time class="dt-published" datetime="2026-09-13T02:20:00.000Z" itemprop="datePublished">2026-09-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/13/day4-lession%202/">Day4 - 第 2 课：Agent 八个核心部件如何协作</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>好。我们继续第 2 课，但这次重点不是背八个定义，而是建立它们之间的<strong>职责边界</strong>。</p>
+<h1 id="第-2-课：Agent-八个核心部件如何协作"><a href="#第-2-课：Agent-八个核心部件如何协作" class="headerlink" title="第 2 课：Agent 八个核心部件如何协作"></a>第 2 课：Agent 八个核心部件如何协作</h1><p>先回到整体：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">                         User Goal</span><br><span class="line">                            ↓</span><br><span class="line">                      ┌──────────┐</span><br><span class="line">                      │ Workflow │</span><br><span class="line">                      └────┬─────┘</span><br><span class="line">                           ↓</span><br><span class="line">                      ┌── Skill ────────────────┐</span><br><span class="line">                      │                         │</span><br><span class="line">                      │ Prompt / Instructions   │</span><br><span class="line">                      │        ↓                │</span><br><span class="line">Context ─────────────→│       LLM               │</span><br><span class="line">                      │     ↑  ↑  ↑             │</span><br><span class="line">                      │     │  │  │             │</span><br><span class="line">                      │ Taxonomy                │</span><br><span class="line">                      │ Policy                  │</span><br><span class="line">                      │ Few-shot                │</span><br><span class="line">                      └────────┬────────────────┘</span><br><span class="line">                               ↓</span><br><span class="line">                             Tool</span><br><span class="line">                               ↓</span><br><span class="line">                          Observation</span><br><span class="line">                               ↓</span><br><span class="line">                            Workflow</span><br><span class="line">                               ↓</span><br><span class="line">                         Next / Finish</span><br><span class="line">                               ↑</span><br><span class="line">                              Eval</span><br></pre></td></tr></table></figure>
+
+<p>你现在已经明确了其中三个层次：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Workflow = 组织能力完成目标</span><br><span class="line">Skill    = 可复用的服务能力</span><br><span class="line">Prompt   = 指导 LLM 执行动作的 Instructions</span><br></pre></td></tr></table></figure>
+
+<p>今天主要把剩下几个部件接进来。</p>
+<hr>
+<h2 id="1-Context：这一次判断，你知道什么？"><a href="#1-Context：这一次判断，你知道什么？" class="headerlink" title="1. Context：这一次判断，你知道什么？"></a>1. Context：这一次判断，你知道什么？</h2><p>这是 Prompt 最容易混淆的对象。</p>
+<p>比如 Field Classification Skill：</p>
+<p><strong>Prompt：</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">根据提供的字段信息判断字段语义类型。</span><br><span class="line">如果证据不足，返回 UNKNOWN。</span><br></pre></td></tr></table></figure>
+
+<p><strong>Context：</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">table_name: production_batch</span><br><span class="line"></span><br><span class="line">table_description:</span><br><span class="line">每日生产批次记录</span><br><span class="line"></span><br><span class="line">column_name:</span><br><span class="line">batch_id</span><br><span class="line"></span><br><span class="line">column_description:</span><br><span class="line">生产批次编号</span><br><span class="line"></span><br><span class="line">samples:</span><br><span class="line">[&quot;20260101&quot;, &quot;20260102&quot;, &quot;20260103&quot;]</span><br><span class="line"></span><br><span class="line">usage:</span><br><span class="line">JOIN production_result</span><br><span class="line">ON production_batch.batch_id =</span><br><span class="line">   production_result.batch_id</span><br></pre></td></tr></table></figure>
+
+<p>两者的区别非常清楚：</p>
+<blockquote>
+<p>Prompt 决定 <strong>怎么做</strong>。</p>
+<p>Context 决定 <strong>这次做的时候知道什么</strong>。</p>
+</blockquote>
+<p>因此：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Prompt 相对稳定</span><br><span class="line">Context 每次运行变化</span><br></pre></td></tr></table></figure>
+
+<p>例如同一个 FieldClassificationSkill：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Prompt</span><br><span class="line">  │</span><br><span class="line">  ├── Context A → user_id     → IDENTIFIER</span><br><span class="line">  ├── Context B → birthday    → DATE</span><br><span class="line">  └── Context C → salary      → NUMBER</span><br></pre></td></tr></table></figure>
+
+<p>这也是为什么我们以后会专门学习 <strong>Context Engineering</strong>。</p>
+<hr>
+<h1 id="2-Taxonomy：世界里允许有哪些概念？"><a href="#2-Taxonomy：世界里允许有哪些概念？" class="headerlink" title="2. Taxonomy：世界里允许有哪些概念？"></a>2. Taxonomy：世界里允许有哪些概念？</h1><p>假设 Prompt 说：</p>
+<blockquote>
+<p>判断字段类型。</p>
+</blockquote>
+<p>立刻出现问题：</p>
+<p><strong>“有哪些类型？”</strong></p>
+<p>于是需要 Taxonomy：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Field Semantic Type</span><br><span class="line">│</span><br><span class="line">├── IDENTIFIER</span><br><span class="line">├── PERSON_NAME</span><br><span class="line">├── PHONE</span><br><span class="line">├── EMAIL</span><br><span class="line">├── ADDRESS</span><br><span class="line">├── NUMBER</span><br><span class="line">├── DATE</span><br><span class="line">├── DATETIME</span><br><span class="line">├── BOOLEAN</span><br><span class="line">├── TEXT</span><br><span class="line">└── UNKNOWN</span><br></pre></td></tr></table></figure>
+
+<p>Taxonomy 解决的不是：</p>
+<blockquote>
+<p>batch_id 到底是不是 IDENTIFIER？</p>
+</blockquote>
+<p>而是：</p>
+<blockquote>
+<p><strong>我们的系统用什么概念描述这个世界？</strong></p>
+</blockquote>
+<p>这是非常不同的问题。</p>
+<p>例如你的 Agent 没有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">POSTAL_CODE</span><br></pre></td></tr></table></figure>
+
+<p>这个 category。</p>
+<p>遇到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">zip_code</span><br><span class="line">90001</span><br><span class="line">94105</span><br><span class="line">10001</span><br></pre></td></tr></table></figure>
+
+<p>模型再聪明也只能：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">硬塞进现有 Category</span><br></pre></td></tr></table></figure>
+
+<p>或者：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UNKNOWN</span><br></pre></td></tr></table></figure>
+
+<p>这就是：</p>
+<blockquote>
+<p><strong>Taxonomy 问题，而不是 Prompt 问题。</strong></p>
+</blockquote>
+<hr>
+<h1 id="3-Decision-Policy：有了信息以后，怎么判断？"><a href="#3-Decision-Policy：有了信息以后，怎么判断？" class="headerlink" title="3. Decision Policy：有了信息以后，怎么判断？"></a>3. Decision Policy：有了信息以后，怎么判断？</h1><p>现在我们已经有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Prompt:</span><br><span class="line">判断字段类型</span><br><span class="line"></span><br><span class="line">Taxonomy:</span><br><span class="line">IDENTIFIER</span><br><span class="line">NUMBER</span><br><span class="line">DATE</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Context:</span><br><span class="line">batch_id</span><br><span class="line">[&quot;20260101&quot;...]</span><br></pre></td></tr></table></figure>
+
+<p>还是不够。</p>
+<p>因为出现冲突：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">batch_id</span><br><span class="line">   ↓</span><br><span class="line">语义像 IDENTIFIER</span><br><span class="line"></span><br><span class="line">20260101</span><br><span class="line">   ↓</span><br><span class="line">格式像 DATE</span><br></pre></td></tr></table></figure>
+
+<p>于是 Policy 规定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">优先判断字段的业务语义。</span><br><span class="line"></span><br><span class="line">格式只能作为支持证据，</span><br><span class="line">不能单独决定 semantic type。</span><br><span class="line"></span><br><span class="line">如果字段用于 JOIN / lookup / reference，</span><br><span class="line">则构成 IDENTIFIER 的强证据。</span><br><span class="line"></span><br><span class="line">如果存在无法消解的强冲突，</span><br><span class="line">返回 UNKNOWN。</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Taxonomy 定义“有哪些答案”。</strong></p>
+<p><strong>Policy 定义“如何从证据走到答案”。</strong></p>
+</blockquote>
+<p>可以把它类比成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Taxonomy ≈ 数据模型</span><br><span class="line"></span><br><span class="line">Policy ≈ 业务规则</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="4-Few-shot：给模型看“规则实际上怎么用”"><a href="#4-Few-shot：给模型看“规则实际上怎么用”" class="headerlink" title="4. Few-shot：给模型看“规则实际上怎么用”"></a>4. Few-shot：给模型看“规则实际上怎么用”</h1><p>Policy 可能写得很好：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">业务语义优先于表面格式。</span><br></pre></td></tr></table></figure>
+
+<p>但是模型未必稳定理解这个抽象原则。</p>
+<p>于是给 Example：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">Input:</span><br><span class="line"></span><br><span class="line">column_name:</span><br><span class="line">batch_id</span><br><span class="line"></span><br><span class="line">samples:</span><br><span class="line">[&quot;20260101&quot;, &quot;20260102&quot;]</span><br><span class="line"></span><br><span class="line">business_context:</span><br><span class="line">生产批次编号，每日生成一个批次，</span><br><span class="line">用于关联生产结果。</span><br><span class="line"></span><br><span class="line">Output:</span><br><span class="line">IDENTIFIER</span><br><span class="line"></span><br><span class="line">Reason:</span><br><span class="line">YYYYMMDD 只是编码格式；</span><br><span class="line">字段的业务作用是识别生产批次。</span><br></pre></td></tr></table></figure>
+
+<p>Few-shot 的作用不是增加规则，而是：</p>
+<blockquote>
+<p><strong>把抽象 Policy 映射成具体行为示范。</strong></p>
+</blockquote>
+<p>所以：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Taxonomy</span><br><span class="line">    ↓</span><br><span class="line">“有哪些概念”</span><br><span class="line"></span><br><span class="line">Policy</span><br><span class="line">    ↓</span><br><span class="line">“应该怎么判断”</span><br><span class="line"></span><br><span class="line">Few-shot</span><br><span class="line">    ↓</span><br><span class="line">“看，这就是我说的判断方式”</span><br></pre></td></tr></table></figure>
+
+<p>这三个特别容易混在一起。</p>
+<hr>
+<h1 id="5-Tool：不要让-LLM-猜它能计算出来的东西"><a href="#5-Tool：不要让-LLM-猜它能计算出来的东西" class="headerlink" title="5. Tool：不要让 LLM 猜它能计算出来的东西"></a>5. Tool：不要让 LLM 猜它能计算出来的东西</h1><p>假设 Context 只有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">column_name: created_date</span><br></pre></td></tr></table></figure>
+
+<p>LLM 需要知道：</p>
+<blockquote>
+<p>这一百万条数据里，有多少能解析成日期？</p>
+</blockquote>
+<p>错误架构：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LLM:</span><br><span class="line">“看起来大概都是日期……”</span><br></pre></td></tr></table></figure>
+
+<p>正确架构：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">LLM / Workflow</span><br><span class="line">      ↓</span><br><span class="line">需要 valid_date_ratio</span><br><span class="line">      ↓</span><br><span class="line">validate_date(column)</span><br><span class="line">      ↓</span><br><span class="line">Polars / DuckDB</span><br><span class="line">      ↓</span><br><span class="line">&#123;</span><br><span class="line">  &quot;valid_ratio&quot;: 0.9987,</span><br><span class="line">  &quot;invalid_count&quot;: 1300</span><br><span class="line">&#125;</span><br><span class="line">      ↓</span><br><span class="line">Context</span><br><span class="line">      ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Context 是信息。</strong></p>
+<p><strong>Tool 是获取信息或改变外部世界的能力。</strong></p>
+</blockquote>
+<p>这两个也非常容易混淆。</p>
+<p>Tool Result 最终会变成 Context：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Tool</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> ↓</span><br><span class="line">Context</span><br><span class="line"> ↓</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
+
+<p>这就是 Agent 非常重要的循环。</p>
+<hr>
+<h1 id="6-Workflow：谁决定什么时候用这些能力？"><a href="#6-Workflow：谁决定什么时候用这些能力？" class="headerlink" title="6. Workflow：谁决定什么时候用这些能力？"></a>6. Workflow：谁决定什么时候用这些能力？</h1><p>现在已经有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br><span class="line">AnomalyDetectionSkill</span><br><span class="line">CleaningPlanSkill</span><br><span class="line"></span><br><span class="line">profile_column()</span><br><span class="line">validate_date()</span><br><span class="line">execute_cleaning()</span><br></pre></td></tr></table></figure>
+
+<p>但系统还需要知道：</p>
+<blockquote>
+<p>谁先执行？</p>
+</blockquote>
+<p>这就是 Workflow：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">CSV</span><br><span class="line"> ↓</span><br><span class="line">Profile</span><br><span class="line"> ↓</span><br><span class="line">Understand</span><br><span class="line"> ↓</span><br><span class="line">Detect</span><br><span class="line"> ↓</span><br><span class="line">Plan</span><br><span class="line"> ↓</span><br><span class="line">Execute</span><br><span class="line"> ↓</span><br><span class="line">Validate</span><br></pre></td></tr></table></figure>
+
+<p>如果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Validate = Failed</span><br></pre></td></tr></table></figure>
+
+<p>Workflow 可以规定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Failed</span><br><span class="line">  ↓</span><br><span class="line">Retry once</span><br><span class="line">  ↓</span><br><span class="line">Still Failed</span><br><span class="line">  ↓</span><br><span class="line">Human Review</span><br></pre></td></tr></table></figure>
+
+<p>也可以把一部分决定权交给 Agent：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Failed</span><br><span class="line">  ↓</span><br><span class="line">Agent 判断原因</span><br><span class="line">  ↓</span><br><span class="line">┌─────────┬──────────┬─────────┐</span><br><span class="line">↓         ↓          ↓</span><br><span class="line">Reprofile Replan     Human</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p>Workflow 管的是<strong>能力之间的时序、路由、循环和控制流</strong>。</p>
+</blockquote>
+<hr>
+<h1 id="7-Eval：整个系统凭什么知道自己变好了？"><a href="#7-Eval：整个系统凭什么知道自己变好了？" class="headerlink" title="7. Eval：整个系统凭什么知道自己变好了？"></a>7. Eval：整个系统凭什么知道自己变好了？</h1><p>这是最后一个部件，却是很多 Agent Demo 最缺的。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill v1</span><br><span class="line">Accuracy = 86%</span><br></pre></td></tr></table></figure>
+
+<p>你修改了 Decision Policy：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v2</span><br></pre></td></tr></table></figure>
+
+<p>某个 <code>batch_id</code> 判断正确了。</p>
+<p>你很开心。</p>
+<p>但：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">原来正确的 20 个字段</span><br><span class="line">现在错了 4 个</span><br></pre></td></tr></table></figure>
+
+<p>整体可能变差。</p>
+<p>所以需要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Eval Dataset</span><br><span class="line">│</span><br><span class="line">├── Normal Cases</span><br><span class="line">├── Boundary Cases</span><br><span class="line">├── Conflict Cases</span><br><span class="line">├── Dirty Cases</span><br><span class="line">└── Historical Failure Cases</span><br><span class="line">        ↓</span><br><span class="line">      Skill v1</span><br><span class="line">        ↓</span><br><span class="line">      Metrics</span><br><span class="line"></span><br><span class="line">      Skill v2</span><br><span class="line">        ↓</span><br><span class="line">      Metrics</span><br><span class="line">        ↓</span><br><span class="line">     Compare</span><br></pre></td></tr></table></figure>
+
+<p>Eval 回答：</p>
+<blockquote>
+<p><strong>这个能力实际上做得怎么样？</strong></p>
+</blockquote>
+<p>更进一步：</p>
+<blockquote>
+<p><strong>修改以后是改善还是 Regression？</strong></p>
+</blockquote>
+<hr>
+<h1 id="8-现在把八个组件放到一个真实过程里"><a href="#8-现在把八个组件放到一个真实过程里" class="headerlink" title="8. 现在把八个组件放到一个真实过程里"></a>8. 现在把八个组件放到一个真实过程里</h1><p>假设输入：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">column_name = batch_id</span><br><span class="line"></span><br><span class="line">samples =</span><br><span class="line">20260101</span><br><span class="line">20260102</span><br><span class="line">20260103</span><br></pre></td></tr></table></figure>
+
+<p>Agent 的真实运行可以理解成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">① Workflow</span><br><span class="line"></span><br><span class="line">“现在需要判断字段语义。”</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">② Skill</span><br><span class="line"></span><br><span class="line">调用：</span><br><span class="line">FieldClassificationSkill</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">③ Prompt</span><br><span class="line"></span><br><span class="line">“根据字段信息判断 semantic type。”</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">④ Context</span><br><span class="line"></span><br><span class="line">column_name</span><br><span class="line">samples</span><br><span class="line">table_description</span><br><span class="line">usage</span><br><span class="line">statistics</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">⑤ Taxonomy</span><br><span class="line"></span><br><span class="line">IDENTIFIER</span><br><span class="line">NUMBER</span><br><span class="line">DATE</span><br><span class="line">...</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">⑥ Decision Policy</span><br><span class="line"></span><br><span class="line">语义 &gt; 表面格式</span><br><span class="line">JOIN/reference → ID evidence</span><br><span class="line">...</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">⑦ Few-shot</span><br><span class="line"></span><br><span class="line">展示类似 batch_code 案例</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">       LLM</span><br><span class="line"></span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">发现还缺信息</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">⑧ Tool</span><br><span class="line"></span><br><span class="line">profile_column()</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">distinct_ratio</span><br><span class="line">valid_date_ratio</span><br><span class="line">...</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">新的 Context</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">LLM 再判断</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">IDENTIFIER</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">Workflow 继续</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">后续 Eval</span><br><span class="line"></span><br><span class="line">检查判断是否正确</span><br></pre></td></tr></table></figure>
+
+<p>注意：</p>
+<p><strong>Eval 通常不属于这一次推理链本身。</strong></p>
+<p>它更像系统外面的反馈控制层：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">         Agent Runtime</span><br><span class="line">              │</span><br><span class="line">              ↓</span><br><span class="line">            Result</span><br><span class="line">              │</span><br><span class="line">  ┌───────────┴──────────┐</span><br><span class="line">  ↓                      ↓</span><br><span class="line">User                   Eval</span><br><span class="line">                         ↓</span><br><span class="line">                   Failure Cases</span><br><span class="line">                         ↓</span><br><span class="line">                 System Improvement</span><br><span class="line">                         ↓</span><br><span class="line">                   Agent vNext</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="9-一个特别重要的认识：这些组件不是平级的"><a href="#9-一个特别重要的认识：这些组件不是平级的" class="headerlink" title="9. 一个特别重要的认识：这些组件不是平级的"></a>9. 一个特别重要的认识：这些组件不是平级的</h1><p>“八个组件”只是方便学习，实际上架构层级不同。</p>
+<p>更准确应该是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── Workflow</span><br><span class="line">│</span><br><span class="line">│    ├── Skill A</span><br><span class="line">│</span><br><span class="line">│    │    ├── Prompt / Instructions</span><br><span class="line">│    │    ├── Taxonomy</span><br><span class="line">│    │    ├── Decision Policy</span><br><span class="line">│    │    ├── Few-shot</span><br><span class="line">│    │    ├── Context</span><br><span class="line">│    │    └── Tools</span><br><span class="line">│    │</span><br><span class="line">│    ├── Skill B</span><br><span class="line">│    └── Skill C</span><br><span class="line">│</span><br><span class="line">└── Eval / Observability</span><br></pre></td></tr></table></figure>
+
+<p>甚至：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Context</span><br></pre></td></tr></table></figure>
+
+<p>也可能是 Agent 级共享的，而不只是 Skill 内部的。</p>
+<p>所以不要形成错误印象：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Prompt</span><br><span class="line">Context</span><br><span class="line">Taxonomy</span><br><span class="line">Policy</span><br><span class="line">Few-shot</span><br><span class="line">Tool</span><br><span class="line">Workflow</span><br><span class="line">Eval</span><br></pre></td></tr></table></figure>
+
+<p>是八块大小相同的积木。</p>
+<p>不是。</p>
+<p>它们是<strong>不同层级、不同职责的架构概念</strong>。</p>
+<hr>
+<h1 id="10-现在给你一个非常实用的故障定位表"><a href="#10-现在给你一个非常实用的故障定位表" class="headerlink" title="10. 现在给你一个非常实用的故障定位表"></a>10. 现在给你一个非常实用的故障定位表</h1><p>以后 Agent 输出错了，先不要说：</p>
+<blockquote>
+<p>“Prompt 写得不好。”</p>
+</blockquote>
+<p>而是问：</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>首先怀疑</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模型不知道自己要做什么</td>
+<td>Prompt</td>
+</tr>
+<tr>
+<td>缺少业务背景</td>
+<td>Context</td>
+</tr>
+<tr>
+<td>没有合适 Category</td>
+<td>Taxonomy</td>
+</tr>
+<tr>
+<td>有信息但判断逻辑不合理</td>
+<td>Decision Policy</td>
+</tr>
+<tr>
+<td>抽象规则模型不会稳定执行</td>
+<td>Few-shot</td>
+</tr>
+<tr>
+<td>LLM 在猜统计结果</td>
+<td>Tool</td>
+</tr>
+<tr>
+<td>调用顺序&#x2F;Retry&#x2F;路由错误</td>
+<td>Workflow</td>
+</tr>
+<tr>
+<td>改了以后不知道是否更好</td>
+<td>Eval</td>
+</tr>
+</tbody></table>
+<p>这张表是今天最实用的部分。</p>
+<hr>
+<h1 id="这一课的小练习"><a href="#这一课的小练习" class="headerlink" title="这一课的小练习"></a>这一课的小练习</h1><p>我们仍然不考定义，而考<strong>故障定位</strong>。</p>
+<p>CSV Cleaning Agent 出现下面 6 个问题，请你判断<strong>主要应该修改哪个组件</strong>。只选最主要的一个：</p>
+<p><strong>A.</strong> <code>batch_id</code> 被判断为 DATE。系统只提供了字段名和样本，没有提供“该字段用于 JOIN 生产批次表”的信息。</p>
+<p><strong>B.</strong> 系统已经知道 <code>batch_id</code> 用于关联生产批次，但规则规定“只要 95% 以上符合 YYYYMMDD，就判断 DATE”。</p>
+<p><strong>C.</strong> 用户上传一个 <code>postal_code</code> 字段，模型知道它是邮政编码，但 <code>available_categories</code> 只有 PHONE、DATE、NUMBER、IDENTIFIER。</p>
+<p><strong>D.</strong> Policy 已经明确规定“业务语义优先于表面格式”，但模型在类似案例中还是经常被 YYYYMMDD 格式带偏。</p>
+<p><strong>E.</strong> Agent 为了判断 <code>salary</code> 是否存在异常值，把一百万个 salary 全部放进 LLM Context，让模型自己估计异常比例。</p>
+<p><strong>F.</strong> Cleaning 执行失败后，本来应该先 Validate → Replan → Retry，但系统直接无限 Retry 同一个 Cleaning Plan。</p>
+<p>请按：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">A → ?</span><br><span class="line">B → ?</span><br><span class="line">C → ?</span><br><span class="line">D → ?</span><br><span class="line">E → ?</span><br><span class="line">F → ?</span><br></pre></td></tr></table></figure>
+
+<p>回答。</p>
+<p>这 6 题如果你能稳定定位，我们就不继续背八个组件，而是进入下一层：<strong>这些组件之间的信息到底是怎样流动的——Agent 的 Observe → Decide → Act 循环。</strong></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/13/day4-lession%202/" data-id="cuid2W5ByBtL5R2IIOseQjPuJ" data-title="Day4 - 第 2 课：Agent 八个核心部件如何协作" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-day4 prompt vs skill" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/13/day4%20prompt%20vs%20skill/" class="article-date">
+  <time class="dt-published" datetime="2026-09-13T02:10:00.000Z" itemprop="datePublished">2026-09-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/13/day4%20prompt%20vs%20skill/">Day4 - Prompt vs Skill</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>可以。这个区别非常重要，因为很多人会把 <strong>Skill 理解成“保存起来的一段 Prompt”</strong>。这样理解会严重限制后面的 Agent 架构设计。</p>
+<p>先给你一句最重要的定义：</p>
+<blockquote>
+<p><strong>Prompt 是“告诉模型这一次怎么做”的指令；Skill 是 Agent 可复用的一项能力。</strong></p>
+</blockquote>
+<p>因此两者不在同一个抽象层次。</p>
+<h2 id="1-放回-Agent-全景图"><a href="#1-放回-Agent-全景图" class="headerlink" title="1. 放回 Agent 全景图"></a>1. 放回 Agent 全景图</h2><p>可以先这样看：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── Workflow</span><br><span class="line">│</span><br><span class="line">├── Skill：Field Classification</span><br><span class="line">│   │</span><br><span class="line">│   ├── Instructions / Prompt</span><br><span class="line">│   ├── Taxonomy</span><br><span class="line">│   ├── Decision Policy</span><br><span class="line">│   ├── Few-shot</span><br><span class="line">│   ├── Input / Output Schema</span><br><span class="line">│   ├── Context Requirements</span><br><span class="line">│   ├── Tools</span><br><span class="line">│   └── Eval Cases</span><br><span class="line">│</span><br><span class="line">├── Skill：Anomaly Detection</span><br><span class="line">│</span><br><span class="line">└── Tools</span><br><span class="line">    ├── profile_column()</span><br><span class="line">    ├── validate_date()</span><br><span class="line">    └── execute_sql()</span><br></pre></td></tr></table></figure>
+
+<p>所以关系更接近：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Skill</span><br><span class="line"> └── uses Prompt</span><br></pre></td></tr></table></figure>
+
+<p>而不是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Skill = Prompt</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="2-Prompt-是什么？"><a href="#2-Prompt-是什么？" class="headerlink" title="2. Prompt 是什么？"></a>2. Prompt 是什么？</h1><p>假设我们要做字段分类。</p>
+<p>最简单的 Prompt 可以是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">你是一个字段分类助手。</span><br><span class="line"></span><br><span class="line">根据字段名称、样本值和字段统计信息，</span><br><span class="line">判断该字段的语义类型。</span><br><span class="line"></span><br><span class="line">必须从 available_categories 中选择。</span><br><span class="line">如果证据不足，返回 UNKNOWN。</span><br></pre></td></tr></table></figure>
+
+<p>它主要解决：</p>
+<blockquote>
+<p><strong>LLM 当前应该执行什么任务、遵循什么基本行为。</strong></p>
+</blockquote>
+<p>输入：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column_name = user_id</span><br><span class="line">samples = [&quot;10001&quot;, &quot;10002&quot;, &quot;10003&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER</span><br></pre></td></tr></table></figure>
+
+<p>从程序角度看，它很像：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LLM(</span><br><span class="line">    instructions,</span><br><span class="line">    context</span><br><span class="line">)</span><br><span class="line">→ result</span><br></pre></td></tr></table></figure>
+
+<p>到这里甚至不一定需要“Skill”这个概念。</p>
+<hr>
+<h1 id="3-Skill-比-Prompt-多了什么？"><a href="#3-Skill-比-Prompt-多了什么？" class="headerlink" title="3. Skill 比 Prompt 多了什么？"></a>3. Skill 比 Prompt 多了什么？</h1><p>假设你现在准备把字段分类能力交给整个 CSV Agent 长期使用。</p>
+<p>要求开始增加：</p>
+<blockquote>
+<p>分类体系是什么？</p>
+<p>判断冲突怎么办？</p>
+<p>需要哪些 Context？</p>
+<p>是否允许 UNKNOWN？</p>
+<p>如果缺少统计信息怎么办？</p>
+<p>输出必须是什么结构？</p>
+<p>怎么知道这个能力改坏了没有？</p>
+</blockquote>
+<p>这时候单独一个 Prompt 已经不够描述这项能力了。</p>
+<p>于是我们把整个能力封装成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br></pre></td></tr></table></figure>
+
+<p>内部可能是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br><span class="line">│</span><br><span class="line">├── Goal</span><br><span class="line">│   └── 判断字段 semantic type</span><br><span class="line">│</span><br><span class="line">├── Input Contract</span><br><span class="line">│   ├── column_name</span><br><span class="line">│   ├── samples</span><br><span class="line">│   ├── statistics</span><br><span class="line">│   └── business_context</span><br><span class="line">│</span><br><span class="line">├── Instructions</span><br><span class="line">│</span><br><span class="line">├── Taxonomy</span><br><span class="line">│   ├── IDENTIFIER</span><br><span class="line">│   ├── NUMBER</span><br><span class="line">│   ├── DATE</span><br><span class="line">│   └── ...</span><br><span class="line">│</span><br><span class="line">├── Decision Policy</span><br><span class="line">│   └── 如何使用证据判断</span><br><span class="line">│</span><br><span class="line">├── Few-shot</span><br><span class="line">│   └── 边界案例</span><br><span class="line">│</span><br><span class="line">├── Tools</span><br><span class="line">│   └── profile_column()</span><br><span class="line">│</span><br><span class="line">├── Output Contract</span><br><span class="line">│   ├── category</span><br><span class="line">│   ├── confidence</span><br><span class="line">│   ├── evidence</span><br><span class="line">│   └── reason_code</span><br><span class="line">│</span><br><span class="line">└── Evals</span><br><span class="line">    └── 这项能力是否工作正常</span><br></pre></td></tr></table></figure>
+
+<p>所以 Skill 的关注点不是：</p>
+<blockquote>
+<p><strong>“这段话怎么写？”</strong></p>
+</blockquote>
+<p>而是：</p>
+<blockquote>
+<p><strong>“如何可靠地提供这项能力？”</strong></p>
+</blockquote>
+<p>这是两者最本质的区别。</p>
+<hr>
+<h1 id="4-用传统软件工程类比，会更容易理解"><a href="#4-用传统软件工程类比，会更容易理解" class="headerlink" title="4. 用传统软件工程类比，会更容易理解"></a>4. 用传统软件工程类比，会更容易理解</h1><p>你是做软件架构的，可以把 Prompt 类比成<strong>函数实现中的一部分逻辑</strong>，而 Skill 更像一个<strong>能力模块 &#x2F; service capability</strong>。</p>
+<p>例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">FieldClassificationSkill</span>:</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">execute</span>(<span class="params">self, column</span>):</span><br><span class="line"></span><br><span class="line">        context = <span class="variable language_">self</span>.build_context(column)</span><br><span class="line"></span><br><span class="line">        stats = <span class="variable language_">self</span>.tools.profile(column)</span><br><span class="line"></span><br><span class="line">        result = <span class="variable language_">self</span>.llm.call(</span><br><span class="line">            instructions=<span class="variable language_">self</span>.instructions,</span><br><span class="line">            taxonomy=<span class="variable language_">self</span>.taxonomy,</span><br><span class="line">            policy=<span class="variable language_">self</span>.policy,</span><br><span class="line">            examples=<span class="variable language_">self</span>.select_examples(context),</span><br><span class="line">            context=context,</span><br><span class="line">            output_schema=<span class="variable language_">self</span>.schema</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.validate(result)</span><br></pre></td></tr></table></figure>
+
+<p>注意：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self.instructions</span><br></pre></td></tr></table></figure>
+
+<p>只是整个 Skill 的一部分。</p>
+<p>Skill 还负责：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">输入是什么</span><br><span class="line">↓</span><br><span class="line">需要什么 Context</span><br><span class="line">↓</span><br><span class="line">需要什么 Tool</span><br><span class="line">↓</span><br><span class="line">怎么调用 LLM</span><br><span class="line">↓</span><br><span class="line">输出是什么</span><br><span class="line">↓</span><br><span class="line">怎么验证</span><br></pre></td></tr></table></figure>
+
+<p>所以从架构角度：</p>
+<blockquote>
+<p><strong>Prompt 更像 LLM interaction layer。</strong></p>
+<p><strong>Skill 更像 capability layer。</strong></p>
+</blockquote>
+<hr>
+<h1 id="5-一个-Skill-甚至不一定只有一个-Prompt"><a href="#5-一个-Skill-甚至不一定只有一个-Prompt" class="headerlink" title="5. 一个 Skill 甚至不一定只有一个 Prompt"></a>5. 一个 Skill 甚至不一定只有一个 Prompt</h1><p>这是特别容易被忽略的一点。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CleaningPlanSkill</span><br></pre></td></tr></table></figure>
+
+<p>内部可能是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Step 1</span><br><span class="line">理解异常</span><br><span class="line">↓</span><br><span class="line">Prompt A</span><br><span class="line"></span><br><span class="line">Step 2</span><br><span class="line">如果信息不足</span><br><span class="line">↓</span><br><span class="line">调用 profile Tool</span><br><span class="line"></span><br><span class="line">Step 3</span><br><span class="line">生成 Cleaning Plan</span><br><span class="line">↓</span><br><span class="line">Prompt B</span><br><span class="line"></span><br><span class="line">Step 4</span><br><span class="line">检查 Plan 风险</span><br><span class="line">↓</span><br><span class="line">Prompt C</span><br><span class="line"></span><br><span class="line">Step 5</span><br><span class="line">Structured Output</span><br></pre></td></tr></table></figure>
+
+<p>那么：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1 Skill</span><br><span class="line">≠</span><br><span class="line">1 Prompt</span><br></pre></td></tr></table></figure>
+
+<p>可能是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1 Skill</span><br><span class="line">=</span><br><span class="line">多个 Prompt</span><br><span class="line">+</span><br><span class="line">多个 Tool</span><br><span class="line">+</span><br><span class="line">局部 Workflow</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="6-反过来，一个-Prompt-也可能同时调用多个-Skill-吗？"><a href="#6-反过来，一个-Prompt-也可能同时调用多个-Skill-吗？" class="headerlink" title="6. 反过来，一个 Prompt 也可能同时调用多个 Skill 吗？"></a>6. 反过来，一个 Prompt 也可能同时调用多个 Skill 吗？</h1><p>这里要谨慎。</p>
+<p>如果用户说：</p>
+<blockquote>
+<p>“帮我分析这个 CSV 的问题，然后制定清洗方案。”</p>
+</blockquote>
+<p>Agent 的顶层 instruction 可能描述整个任务。</p>
+<p>但真正执行时：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line"> ↓</span><br><span class="line">Field Understanding Skill</span><br><span class="line"> ↓</span><br><span class="line">Anomaly Detection Skill</span><br><span class="line"> ↓</span><br><span class="line">Cleaning Planning Skill</span><br></pre></td></tr></table></figure>
+
+<p>所以不要根据“Prompt 有几段文字”决定 Skill 怎么拆。</p>
+<p><strong>Skill 的拆分依据应该是能力边界。</strong></p>
+<p>这是一个非常重要的架构原则。</p>
+<hr>
+<h1 id="7-怎么判断一个东西应该成为-Skill？"><a href="#7-怎么判断一个东西应该成为-Skill？" class="headerlink" title="7. 怎么判断一个东西应该成为 Skill？"></a>7. 怎么判断一个东西应该成为 Skill？</h1><p>以后可以问四个问题：</p>
+<p><strong>第一，它是不是一个相对独立的能力？</strong></p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">字段语义识别</span><br></pre></td></tr></table></figure>
+
+<p>是。</p>
+<p>“判断 DATE”通常不是一个独立 Skill，而是 Field Classification Skill 内的一种分类能力。</p>
+<p><strong>第二，它能不能被多个 Workflow 重用？</strong></p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AnomalyDetectionSkill</span><br></pre></td></tr></table></figure>
+
+<p>CSV Cleaning 可以用。</p>
+<p>Data Quality Inspection 也可以用。</p>
+<p>自动数据治理也可以用。</p>
+<p>这非常适合 Skill。</p>
+<p><strong>第三，它有没有比较稳定的 Input → Capability → Output 边界？</strong></p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Input:</span><br><span class="line">column + context</span><br><span class="line"></span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">FieldClassificationSkill</span><br><span class="line"></span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">Output:</span><br><span class="line">semantic_type</span><br><span class="line">confidence</span><br><span class="line">evidence</span><br></pre></td></tr></table></figure>
+
+<p>边界非常清楚。</p>
+<p><strong>第四，它能不能被独立 Eval？</strong></p>
+<p>这是我很推荐的判断方式。</p>
+<p>如果你能说：</p>
+<blockquote>
+<p>“我要单独测试 Field Classification 的准确率。”</p>
+</blockquote>
+<p>那么它很可能值得成为 Skill。</p>
+<hr>
+<h1 id="8-Skill-和-Tool-也顺便区分一下"><a href="#8-Skill-和-Tool-也顺便区分一下" class="headerlink" title="8. Skill 和 Tool 也顺便区分一下"></a>8. Skill 和 Tool 也顺便区分一下</h1><p>这三个概念经常混在一起：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Prompt</span><br><span class="line">Skill</span><br><span class="line">Tool</span><br></pre></td></tr></table></figure>
+
+<p>可以先这么记：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Prompt</th>
+<th>Skill</th>
+<th>Tool</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>核心</td>
+<td>指令</td>
+<td>能力</td>
+<td>动作</td>
+</tr>
+<tr>
+<td>主要问题</td>
+<td>模型怎么做</td>
+<td>Agent 会什么</td>
+<td>Agent 能执行什么</td>
+</tr>
+<tr>
+<td>是否通常涉及 LLM</td>
+<td>是</td>
+<td>可能</td>
+<td>不一定</td>
+</tr>
+<tr>
+<td>是否有输入输出</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+</tr>
+<tr>
+<td>是否可复用</td>
+<td>可以</td>
+<td><strong>强调复用</strong></td>
+<td>强调复用</td>
+</tr>
+<tr>
+<td>例子</td>
+<td>分类指令</td>
+<td>Field Classification</td>
+<td>profile_column</td>
+</tr>
+<tr>
+<td>确定性</td>
+<td>低</td>
+<td>视实现而定</td>
+<td>通常较高</td>
+</tr>
+</tbody></table>
+<p>比如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br></pre></td></tr></table></figure>
+
+<p>告诉 Agent：</p>
+<blockquote>
+<p><strong>我有“理解字段语义”的能力。</strong></p>
+</blockquote>
+<p>而：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">profile_column()</span><br></pre></td></tr></table></figure>
+
+<p>告诉 Agent：</p>
+<blockquote>
+<p><strong>我可以实际计算这一列的统计信息。</strong></p>
+</blockquote>
+<p>Skill 在判断：</p>
+<blockquote>
+<p>“它是什么？”</p>
+</blockquote>
+<p>Tool 在执行：</p>
+<blockquote>
+<p>“帮我算一下。”</p>
+</blockquote>
+<hr>
+<h1 id="9-Skill-和-Workflow-又有什么区别？"><a href="#9-Skill-和-Workflow-又有什么区别？" class="headerlink" title="9. Skill 和 Workflow 又有什么区别？"></a>9. Skill 和 Workflow 又有什么区别？</h1><p>这个也很关键。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br></pre></td></tr></table></figure>
+
+<p>是一项能力。</p>
+<p>而：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Understand</span><br><span class="line">   ↓</span><br><span class="line">Profile</span><br><span class="line">   ↓</span><br><span class="line">Detect</span><br><span class="line">   ↓</span><br><span class="line">Plan</span><br><span class="line">   ↓</span><br><span class="line">Execute</span><br><span class="line">   ↓</span><br><span class="line">Validate</span><br></pre></td></tr></table></figure>
+
+<p>是在组织多项能力完成一个更大的 Goal。</p>
+<p>所以：</p>
+<blockquote>
+<p><strong>Skill 回答：Agent 会什么？</strong></p>
+<p><strong>Workflow 回答：这些能力按照什么关系协作？</strong></p>
+</blockquote>
+<p>但边界不是绝对的。</p>
+<p>一个复杂 Skill 内部也可以有自己的小 Workflow：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br><span class="line">       │</span><br><span class="line">       ├─ Initial Classification</span><br><span class="line">       │</span><br><span class="line">       ├─ Need more evidence?</span><br><span class="line">       │       ↓</span><br><span class="line">       │   profile_column()</span><br><span class="line">       │</span><br><span class="line">       ├─ Re-classify</span><br><span class="line">       │</span><br><span class="line">       └─ Validate</span><br></pre></td></tr></table></figure>
+
+<p>所以整个 Agent 是一种<strong>分层结构</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── Global Workflow</span><br><span class="line">│</span><br><span class="line">├── Skill A</span><br><span class="line">│   └── Local Workflow</span><br><span class="line">│       ├── Prompt</span><br><span class="line">│       └── Tool</span><br><span class="line">│</span><br><span class="line">└── Skill B</span><br></pre></td></tr></table></figure>
+
+<p>这和传统软件中的：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">System</span><br><span class="line"> ↓</span><br><span class="line">Service</span><br><span class="line"> ↓</span><br><span class="line">Module</span><br><span class="line"> ↓</span><br><span class="line">Function</span><br></pre></td></tr></table></figure>
+
+<p>非常相似。</p>
+<hr>
+<h1 id="10-为什么要引入-Skill-这一层？"><a href="#10-为什么要引入-Skill-这一层？" class="headerlink" title="10. 为什么要引入 Skill 这一层？"></a>10. 为什么要引入 Skill 这一层？</h1><p>这是最值得理解的地方。</p>
+<p>假设没有 Skill：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── prompt_1</span><br><span class="line">├── prompt_2</span><br><span class="line">├── prompt_3</span><br><span class="line">├── prompt_4</span><br><span class="line">├── tool_1</span><br><span class="line">├── tool_2</span><br><span class="line">├── taxonomy.json</span><br><span class="line">├── examples.json</span><br><span class="line">└── ...</span><br></pre></td></tr></table></figure>
+
+<p>时间久了你很难回答：</p>
+<blockquote>
+<p>哪些东西共同构成“字段分类能力”？</p>
+</blockquote>
+<p>引入 Skill 后：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── FieldClassificationSkill</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Taxonomy</span><br><span class="line">│   ├── Policy</span><br><span class="line">│   ├── Examples</span><br><span class="line">│   └── Eval</span><br><span class="line">│</span><br><span class="line">├── AnomalyDetectionSkill</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Rules</span><br><span class="line">│   ├── Tools</span><br><span class="line">│   └── Eval</span><br><span class="line">│</span><br><span class="line">└── CleaningPlanSkill</span><br></pre></td></tr></table></figure>
+
+<p>系统从：</p>
+<blockquote>
+<p><strong>按技术组件组织</strong></p>
+</blockquote>
+<p>变成：</p>
+<blockquote>
+<p><strong>按能力组织。</strong></p>
+</blockquote>
+<p>对于复杂 Agent，这个变化非常重要。</p>
+<hr>
+<h1 id="11-所以你以后可以用三个层次思考"><a href="#11-所以你以后可以用三个层次思考" class="headerlink" title="11. 所以你以后可以用三个层次思考"></a>11. 所以你以后可以用三个层次思考</h1><p>拿到一个需求：</p>
+<blockquote>
+<p>“自动清洗 CSV。”</p>
+</blockquote>
+<p>第一层先问 <strong>Workflow</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">为了完成这个 Goal，需要经历哪些阶段？</span><br></pre></td></tr></table></figure>
+
+<p>得到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Understand → Detect → Plan → Execute → Validate</span><br></pre></td></tr></table></figure>
+
+<p>第二层问 <strong>Skill</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">每个阶段需要 Agent 具备什么能力？</span><br></pre></td></tr></table></figure>
+
+<p>得到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Field Understanding</span><br><span class="line">Anomaly Detection</span><br><span class="line">Cleaning Planning</span><br><span class="line">Result Validation</span><br></pre></td></tr></table></figure>
+
+<p>第三层才问 <strong>Prompt</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">某个 Skill 需要 LLM 时，</span><br><span class="line">应该如何指导 LLM 完成这一步？</span><br></pre></td></tr></table></figure>
+
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">业务 Goal</span><br><span class="line">   ↓</span><br><span class="line">Workflow：怎么完成</span><br><span class="line">   ↓</span><br><span class="line">Skill：需要什么能力</span><br><span class="line">   ↓</span><br><span class="line">Prompt：LLM 如何提供其中的能力</span><br></pre></td></tr></table></figure>
+
+<p>这三个层级一旦分清楚，你后面设计 Agent 会清晰很多。</p>
+<p>最值得记住的一句话就是：</p>
+<blockquote>
+<p><strong>不要从 Prompt 开始设计 Agent。先从 Goal 拆 Workflow，从 Workflow 识别 Skills，再为需要 LLM 的 Skill 设计 Prompt。</strong></p>
+</blockquote>
+<p>下一步我们可以顺着这个问题继续讲 <strong>“Skill 到底应该拆多大：什么时候应该拆成两个 Skill，什么时候应该只是一个 Skill 里的两个步骤”</strong>。这个问题会直接决定 Agent 的模块化程度。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/13/day4%20prompt%20vs%20skill/" data-id="cuidcTPv-QFC8Gbk7VuV5CR4f" data-title="Day4 - Prompt vs Skill" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-day4 agent的8个层次" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/" class="article-date">
+  <time class="dt-published" datetime="2026-09-13T02:00:00.000Z" itemprop="datePublished">2026-09-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/">Day4 - Agent 的 8 个层次</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>对，你现在问到了一个比“怎么写 Decision Rule”更根本的问题：<strong>Agent 中这些东西到底分别负责什么，以及它们之间是什么关系。</strong></p>
+<p>而且你对 <code>batch_id</code> 的判断方向基本对，但我会修正一点：<strong>“用于过滤”本身不能很好地区分 DATE 和 IDENTIFIER</strong>。ID 同样经常用于过滤。更关键的是“这个字段在业务中代表什么”，以及操作是否体现这种语义。</p>
+<p>先把整体模型建立起来。</p>
+<h2 id="一、先纠正一个概念：Skill-不等于-Prompt"><a href="#一、先纠正一个概念：Skill-不等于-Prompt" class="headerlink" title="一、先纠正一个概念：Skill 不等于 Prompt"></a>一、先纠正一个概念：Skill 不等于 Prompt</h2><p>前面为了教学我把它简化了。更准确地说：</p>
+<blockquote>
+<p><strong>Prompt 是 Skill 的一个组成部分，而不是 Skill 本身。</strong></p>
+</blockquote>
+<p>我建议你脑中建立下面这个层级：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── Context</span><br><span class="line">│</span><br><span class="line">├── Workflow / Orchestration</span><br><span class="line">│</span><br><span class="line">│</span><br><span class="line">├── Skill A：字段分类</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Taxonomy</span><br><span class="line">│   ├── Decision Policy</span><br><span class="line">│   ├── Few-shot Examples</span><br><span class="line">│   ├── Output Schema</span><br><span class="line">│   └── Eval Cases</span><br><span class="line">│</span><br><span class="line">├── Skill B：异常检测</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Rules / Knowledge</span><br><span class="line">│   ├── Few-shot</span><br><span class="line">│   ├── Output Schema</span><br><span class="line">│   └── Eval Cases</span><br><span class="line">│</span><br><span class="line">└── Tools</span><br><span class="line">    ├── profile_column()</span><br><span class="line">    ├── validate_date()</span><br><span class="line">    ├── calculate_unique_ratio()</span><br><span class="line">    ├── execute_duckdb()</span><br><span class="line">    └── execute_polars()</span><br></pre></td></tr></table></figure>
+
+<p>当然，不是每个 Skill 都必须机械地包含这六项。简单 Skill 可能只有 Prompt + Tool；复杂 Skill 才需要完整体系。</p>
+<hr>
+<h1 id="二、8-个概念到底分别解决什么问题？"><a href="#二、8-个概念到底分别解决什么问题？" class="headerlink" title="二、8 个概念到底分别解决什么问题？"></a>二、8 个概念到底分别解决什么问题？</h1><p>可以用一句话分别记住。</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>它回答的问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Prompt</strong></td>
+<td>我要模型现在做什么？</td>
+</tr>
+<tr>
+<td><strong>Context</strong></td>
+<td>模型这一次做判断时知道什么？</td>
+</tr>
+<tr>
+<td><strong>Taxonomy</strong></td>
+<td>有哪些合法的概念&#x2F;类别？</td>
+</tr>
+<tr>
+<td><strong>Decision Policy</strong></td>
+<td>根据已有信息，应该怎么做决定？</td>
+</tr>
+<tr>
+<td><strong>Few-shot</strong></td>
+<td>给模型看几个“应该怎么判断”的示范</td>
+</tr>
+<tr>
+<td><strong>Tool</strong></td>
+<td>哪些事情不要让 LLM 猜，而是实际计算&#x2F;执行？</td>
+</tr>
+<tr>
+<td><strong>Workflow</strong></td>
+<td>先做什么、后做什么、什么时候调用谁？</td>
+</tr>
+<tr>
+<td><strong>Eval</strong></td>
+<td>整套东西到底做得好不好？修改后有没有变差？</td>
+</tr>
+</tbody></table>
+<p>这八个概念看起来很像，但职责其实非常不同。</p>
+<hr>
+<h1 id="三、Prompt：任务说明书"><a href="#三、Prompt：任务说明书" class="headerlink" title="三、Prompt：任务说明书"></a>三、Prompt：任务说明书</h1><p>Prompt 最核心的作用是：</p>
+<blockquote>
+<p><strong>告诉模型它当前承担什么任务，以及如何使用提供给它的信息。</strong></p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">你是字段分类器。</span><br><span class="line"></span><br><span class="line">根据 column_name、samples、statistics 和 business_context，</span><br><span class="line">判断字段 semantic_type。</span><br><span class="line"></span><br><span class="line">必须从 available_categories 中选择。</span><br><span class="line">证据不足时返回 UNKNOWN。</span><br><span class="line"></span><br><span class="line">按照 Decision Policy 进行判断。</span><br></pre></td></tr></table></figure>
+
+<p>Prompt 本身最好不要承担所有领域知识。</p>
+<p>不要最后变成：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">你是字段分类器……</span><br><span class="line">如果id……</span><br><span class="line">如果date……</span><br><span class="line">如果phone……</span><br><span class="line">如果address……</span><br><span class="line">……</span><br><span class="line">5000行</span><br></pre></td></tr></table></figure>
+
+<p>否则所有东西耦合在一起。</p>
+<p>所以你可以把 Prompt 理解成：</p>
+<blockquote>
+<p><strong>Skill 的操作说明 &#x2F; instruction layer。</strong></p>
+</blockquote>
+<hr>
+<h1 id="四、Context：这一次-Agent-知道什么"><a href="#四、Context：这一次-Agent-知道什么" class="headerlink" title="四、Context：这一次 Agent 知道什么"></a>四、Context：这一次 Agent 知道什么</h1><p>这个概念非常重要。</p>
+<p>例如只有：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">batch_id</span><br><span class="line">[&quot;20260101&quot;, &quot;20260102&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>模型很难判断。</p>
+<p>如果 Context 增加：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">table_name:</span><br><span class="line">production_batch</span><br><span class="line"></span><br><span class="line">table_description:</span><br><span class="line">每日生产批次记录</span><br><span class="line"></span><br><span class="line">column_description:</span><br><span class="line">生产批次编号</span><br><span class="line"></span><br><span class="line">usage:</span><br><span class="line">与 production_result.batch_id 进行关联</span><br></pre></td></tr></table></figure>
+
+<p>判断突然变得容易。</p>
+<p>所以：</p>
+<blockquote>
+<p><strong>Prompt 决定“怎么想”；Context 决定“拿什么信息想”。</strong></p>
+</blockquote>
+<p>这是一个非常值得记住的区别。</p>
+<p>很多所谓“Prompt 问题”，其实根本不是 Prompt 问题，而是：</p>
+<blockquote>
+<p><strong>Context 不够。</strong></p>
+</blockquote>
+<p>再厉害的 Prompt，也不能稳定推断系统根本没提供的信息。</p>
+<hr>
+<h1 id="五、Taxonomy：规定“世界里有哪些东西”"><a href="#五、Taxonomy：规定“世界里有哪些东西”" class="headerlink" title="五、Taxonomy：规定“世界里有哪些东西”"></a>五、Taxonomy：规定“世界里有哪些东西”</h1><p>例如：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">available_categories:</span><br><span class="line"></span><br><span class="line">IDENTIFIER</span><br><span class="line">NUMBER</span><br><span class="line">DATE</span><br><span class="line">DATETIME</span><br><span class="line">PHONE</span><br><span class="line">EMAIL</span><br><span class="line">ADDRESS</span><br><span class="line">PERSON_NAME</span><br><span class="line">TEXT</span><br><span class="line">UNKNOWN</span><br></pre></td></tr></table></figure>
+
+<p>这只是第一层。</p>
+<p>真正好的 Taxonomy 还应该定义：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER 是什么？</span><br><span class="line">NUMBER 是什么？</span><br><span class="line">DATE 是什么？</span><br><span class="line"></span><br><span class="line">IDENTIFIER 和 NUMBER 的边界是什么？</span><br><span class="line">DATE 和 DATETIME 的边界是什么？</span><br><span class="line">TEXT 和 UNKNOWN 有什么区别？</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Taxonomy 管的是概念空间。</strong></p>
+</blockquote>
+<p>它不主要负责：</p>
+<blockquote>
+<p>“这一次 batch_id 应该选哪个？”</p>
+</blockquote>
+<p>后者是 Decision Policy 的事情。</p>
+<hr>
+<h1 id="六、Decision-Policy：规定怎么使用证据做决定"><a href="#六、Decision-Policy：规定怎么使用证据做决定" class="headerlink" title="六、Decision Policy：规定怎么使用证据做决定"></a>六、Decision Policy：规定怎么使用证据做决定</h1><p>例如：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">优先判断 semantic role。</span><br><span class="line"></span><br><span class="line">格式只能作为支持证据，</span><br><span class="line">不得仅根据格式决定 semantic_type。</span><br><span class="line"></span><br><span class="line">存在明确业务描述时，</span><br><span class="line">业务语义证据优先于表面格式。</span><br><span class="line"></span><br><span class="line">存在强冲突且无法消解时，</span><br><span class="line">返回 UNKNOWN。</span><br></pre></td></tr></table></figure>
+
+<p>这就是 Policy。</p>
+<p>所以：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Taxonomy</span><br><span class="line">    ↓</span><br><span class="line">定义 IDENTIFIER 是什么</span><br><span class="line"></span><br><span class="line">Decision Policy</span><br><span class="line">    ↓</span><br><span class="line">规定什么时候应该选择 IDENTIFIER</span><br></pre></td></tr></table></figure>
+
+<p>两者千万不要混。</p>
+<hr>
+<h1 id="七、Few-shot：不是规则，而是“案例教学”"><a href="#七、Few-shot：不是规则，而是“案例教学”" class="headerlink" title="七、Few-shot：不是规则，而是“案例教学”"></a>七、Few-shot：不是规则，而是“案例教学”</h1><p>假设 Policy 写了：</p>
+<blockquote>
+<p>明确业务语义优先于表面格式。</p>
+</blockquote>
+<p>LLM 可能还是理解得不稳定。</p>
+<p>你给一个 example：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Input:</span><br><span class="line">column_name = batch_id</span><br><span class="line">samples = [&quot;20260101&quot;,&quot;20260102&quot;]</span><br><span class="line">business_context = &quot;每日生产批次编号&quot;</span><br><span class="line"></span><br><span class="line">Output:</span><br><span class="line">IDENTIFIER</span><br><span class="line"></span><br><span class="line">Reason:</span><br><span class="line">YYYYMMDD 是存储格式；</span><br><span class="line">字段实际承担生产批次标识作用。</span><br></pre></td></tr></table></figure>
+
+<p>这就是 Few-shot。</p>
+<p>它的价值是：</p>
+<blockquote>
+<p><strong>把抽象 Policy 变成具体行为示范。</strong></p>
+</blockquote>
+<p>因此：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Policy:</span><br><span class="line">告诉模型原则</span><br><span class="line"></span><br><span class="line">Few-shot:</span><br><span class="line">告诉模型这个原则在具体案例里长什么样</span><br></pre></td></tr></table></figure>
+
+<p>这两个也不能混。</p>
+<hr>
+<h1 id="八、Tool：不要让-LLM-做它不擅长的事情"><a href="#八、Tool：不要让-LLM-做它不擅长的事情" class="headerlink" title="八、Tool：不要让 LLM 做它不擅长的事情"></a>八、Tool：不要让 LLM 做它不擅长的事情</h1><p>比如你有 100 万行 CSV。</p>
+<p>不要：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LLM，请判断这一列有多少 distinct values。</span><br></pre></td></tr></table></figure>
+
+<p>应该：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">DuckDB / Polars</span><br><span class="line">      ↓</span><br><span class="line">profile_column()</span><br><span class="line">      ↓</span><br><span class="line">&#123;</span><br><span class="line">  &quot;row_count&quot;: 1000000,</span><br><span class="line">  &quot;distinct_count&quot;: 365,</span><br><span class="line">  &quot;null_ratio&quot;: 0.001,</span><br><span class="line">  &quot;min&quot;: ...,</span><br><span class="line">  &quot;max&quot;: ...</span><br><span class="line">&#125;</span><br><span class="line">      ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>所以 Tool 的核心原则可以记成：</p>
+<blockquote>
+<p><strong>能确定性计算、查询、验证、转换、执行的事情，优先 Tool。</strong></p>
+</blockquote>
+<p>LLM 更适合：</p>
+<blockquote>
+<p>理解、分类、解释、规划、处理模糊语义。</p>
+</blockquote>
+<p>这正好对应你现在 CSV Agent 里 DuckDB &#x2F; Polars 的定位。</p>
+<hr>
+<h1 id="九、Workflow：把所有能力组织起来"><a href="#九、Workflow：把所有能力组织起来" class="headerlink" title="九、Workflow：把所有能力组织起来"></a>九、Workflow：把所有能力组织起来</h1><p>这是你作为 Agent 架构师尤其应该关注的地方。</p>
+<p>比如字段分类不是直接：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CSV → LLM</span><br></pre></td></tr></table></figure>
+
+<p>而可能是：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">CSV</span><br><span class="line"> ↓</span><br><span class="line">读取 schema</span><br><span class="line"> ↓</span><br><span class="line">Polars / DuckDB profiling</span><br><span class="line"> ↓</span><br><span class="line">获取 table / business context</span><br><span class="line"> ↓</span><br><span class="line">Field Classification Skill</span><br><span class="line"> ↓</span><br><span class="line">confidence 足够？</span><br><span class="line"> ├─ YES → 输出</span><br><span class="line"> │</span><br><span class="line"> └─ NO</span><br><span class="line">     ↓</span><br><span class="line"> 获取更多 context / 调用其他 Tool</span><br><span class="line">     ↓</span><br><span class="line"> 再判断</span><br><span class="line">     ↓</span><br><span class="line"> 仍然不够</span><br><span class="line">     ↓</span><br><span class="line"> UNKNOWN / 人工确认</span><br></pre></td></tr></table></figure>
+
+<p>这整个过程就是 Workflow。</p>
+<p>所以：</p>
+<blockquote>
+<p><strong>Skill 是能力；Workflow 是能力之间如何协作。</strong></p>
+</blockquote>
+<hr>
+<h1 id="十、Eval：Agent-的单元测试-回归测试"><a href="#十、Eval：Agent-的单元测试-回归测试" class="headerlink" title="十、Eval：Agent 的单元测试 + 回归测试"></a>十、Eval：Agent 的单元测试 + 回归测试</h1><p>这个概念对你刚才说的：</p>
+<blockquote>
+<p>“先做简单规则，在实际应用中不断完善。”</p>
+</blockquote>
+<p>至关重要。</p>
+<p>假设 v1：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">batch_id → DATE</span><br></pre></td></tr></table></figure>
+
+<p>专家纠正：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">batch_id → IDENTIFIER</span><br></pre></td></tr></table></figure>
+
+<p>你修改 Policy。</p>
+<p>如果没有 Eval，你只能知道：</p>
+<blockquote>
+<p>batch_id 修好了。</p>
+</blockquote>
+<p>但不知道是不是把另外 100 个 DATE 搞错了。</p>
+<p>所以要把失败案例加入：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Eval Dataset</span><br><span class="line"></span><br><span class="line">case_001 → expected DATE</span><br><span class="line">case_002 → expected NUMBER</span><br><span class="line">case_003 → expected IDENTIFIER</span><br><span class="line">...</span><br><span class="line">case_137 → batch_id → IDENTIFIER</span><br></pre></td></tr></table></figure>
+
+<p>修改以后重新运行：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">v1 accuracy = 91.2%</span><br><span class="line"></span><br><span class="line">修改 Policy</span><br><span class="line"></span><br><span class="line">v2 accuracy = 93.1%</span><br><span class="line"></span><br><span class="line">但是：</span><br><span class="line">DATE recall</span><br><span class="line">96% → 81%</span><br><span class="line"></span><br><span class="line">⚠️ regression</span><br></pre></td></tr></table></figure>
+
+<p>这时候你就知道修改方式有问题。</p>
+<p>所以：</p>
+<blockquote>
+<p><strong>没有 Eval，“持续迭代”很容易变成“持续打补丁”。</strong></p>
+</blockquote>
+<hr>
+<h1 id="十一、现在回头看你的-batch-id-答案"><a href="#十一、现在回头看你的-batch-id-答案" class="headerlink" title="十一、现在回头看你的 batch_id 答案"></a>十一、现在回头看你的 batch_id 答案</h1><p>你认为应该修改：</p>
+<blockquote>
+<p><strong>Context + Decision Policy</strong></p>
+</blockquote>
+<p>总体判断很好。</p>
+<h3 id="Context：对"><a href="#Context：对" class="headerlink" title="Context：对"></a>Context：对</h3><p>你提出应该增加：</p>
+<blockquote>
+<p>字段所在表的信息、存放什么内容、batch_id 用于什么。</p>
+</blockquote>
+<p>完全正确。</p>
+<p>我甚至建议以后 Context 分层：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Column Context</span><br><span class="line">- column_name</span><br><span class="line">- samples</span><br><span class="line">- statistics</span><br><span class="line"></span><br><span class="line">Table Context</span><br><span class="line">- table_name</span><br><span class="line">- table_description</span><br><span class="line">- related_columns</span><br><span class="line"></span><br><span class="line">Business Context</span><br><span class="line">- column_description</span><br><span class="line">- business meaning</span><br><span class="line">- usage</span><br><span class="line"></span><br><span class="line">Relationship Context</span><br><span class="line">- foreign key</span><br><span class="line">- referenced tables</span><br><span class="line">- downstream usage</span><br></pre></td></tr></table></figure>
+
+<p>这样 Skill 不需要靠猜。</p>
+<h3 id="Decision-Policy：也对，但你的具体规则还可以修一下"><a href="#Decision-Policy：也对，但你的具体规则还可以修一下" class="headerlink" title="Decision Policy：也对，但你的具体规则还可以修一下"></a>Decision Policy：也对，但你的具体规则还可以修一下</h3><p>你说：</p>
+<blockquote>
+<p>用于过滤，例如早于某日、晚于某日 → 倾向 DATE。</p>
+</blockquote>
+<p>这个很好，因为 <code>before/after</code> 表达了 temporal semantics。</p>
+<p>但是：</p>
+<blockquote>
+<p>用于过滤 → DATE</p>
+</blockquote>
+<p>不成立，因为：</p>
+<figure class="highlight sql"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">WHERE</span> user_id <span class="operator">=</span> <span class="number">10001</span></span><br></pre></td></tr></table></figure>
+
+<p>也是过滤。</p>
+<p>所以不是“是否过滤”，而是：</p>
+<blockquote>
+<p><strong>操作本身体现了什么语义。</strong></p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">before / after / date range</span><br><span class="line">→ temporal semantics</span><br><span class="line">→ DATE evidence</span><br><span class="line"></span><br><span class="line">SUM / AVG / difference / quantity comparison</span><br><span class="line">→ quantitative semantics</span><br><span class="line">→ NUMBER evidence</span><br><span class="line"></span><br><span class="line">join / lookup / reference / equality matching</span><br><span class="line">→ identity semantics</span><br><span class="line">→ IDENTIFIER evidence</span><br></pre></td></tr></table></figure>
+
+<p>你另外说：</p>
+<blockquote>
+<p>“用于计算某个批次的达标率 → 倾向批次”</p>
+</blockquote>
+<p>这里也需要注意。</p>
+<p>如果：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GROUP BY batch_id</span><br><span class="line">计算每个 batch 的达标率</span><br></pre></td></tr></table></figure>
+
+<p><code>batch_id</code> 的作用其实是：</p>
+<blockquote>
+<p><strong>分组维度 &#x2F; entity identity</strong></p>
+</blockquote>
+<p>所以支持 IDENTIFIER。</p>
+<p>不是因为“计算达标率”，而是因为：</p>
+<blockquote>
+<p><strong>batch_id 用来区分不同批次，达标率才是被计算出来的 NUMBER。</strong></p>
+</blockquote>
+<p>这个区别非常重要。</p>
+<hr>
+<h1 id="十二、把这-8-个概念放进一个-Agent，你就清楚了"><a href="#十二、把这-8-个概念放进一个-Agent，你就清楚了" class="headerlink" title="十二、把这 8 个概念放进一个 Agent，你就清楚了"></a>十二、把这 8 个概念放进一个 Agent，你就清楚了</h1><p>最终可以形成：</p>
+<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">                  Agent</span><br><span class="line">                    │</span><br><span class="line">              ┌─────┴─────┐</span><br><span class="line">              │ Workflow  │</span><br><span class="line">              └─────┬─────┘</span><br><span class="line">                    │</span><br><span class="line">       ┌────────────┼────────────┐</span><br><span class="line">       ↓            ↓            ↓</span><br><span class="line">     Skill A      Skill B      Skill C</span><br><span class="line">   字段分类       异常检测      清洗规划</span><br><span class="line">       │</span><br><span class="line"> ┌─────┼─────────────────┐</span><br><span class="line"> ↓     ↓        ↓        ↓</span><br><span class="line">Prompt Taxonomy Policy Few-shot</span><br><span class="line"> │</span><br><span class="line"> ↓</span><br><span class="line">Context ←──── Workflow 动态准备</span><br><span class="line"> │</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br><span class="line"> │</span><br><span class="line"> ├────需要确定性信息────→ Tools</span><br><span class="line"> │                         ↓</span><br><span class="line"> │                   DuckDB / Polars</span><br><span class="line"> │                         │</span><br><span class="line"> └────────结果─────────────┘</span><br><span class="line">              ↓</span><br><span class="line">         Output Schema</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">系统外部还有一层：</span><br><span class="line"></span><br><span class="line">             Eval</span><br><span class="line">              ↑</span><br><span class="line">      测整个 Skill / Agent</span><br><span class="line">              ↑</span><br><span class="line">        真实失败案例</span><br><span class="line">              ↑</span><br><span class="line">          专家反馈</span><br></pre></td></tr></table></figure>
+
+<p>你可以把它压缩成一句非常适合 Agent 架构设计的口诀：</p>
+<blockquote>
+<p><strong>Prompt 定任务，Context 给信息，Taxonomy 定概念，Policy 定决策，Few-shot 做示范，Tool 做确定性工作，Workflow 管流程，Eval 管进化。</strong></p>
+</blockquote>
+<p>有了这张地图之后，我们再做 <strong>Failure Decomposition</strong> 就有意义了。因为以后看到一个 Agent 错误，你不应该第一反应“改 Prompt”，而应该先定位：<strong>到底是这八层中的哪一层出了问题。</strong></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/" data-id="cuidM9usnc57Eb-pdGYXe7qqp" data-title="Day4 - Agent 的 8 个层次" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-day3-blog" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/09/11/day3-blog/" class="article-date">
@@ -268,40 +1262,12 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3-blog/" data-id="cuidtsdkIdMAyu4r92EbFRwsS" data-title="Day3 - Decision Rule 设计" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/11/day3-blog/" data-id="cuidRSIydXP6KSny4BsoUHVcu" data-title="Day3 - Decision Rule 设计" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li></ul>
 
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-day3-3" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/11/day3-3/" class="article-date">
-  <time class="dt-published" datetime="2026-09-11T13:45:44.236Z" itemprop="datePublished">2026-09-11</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3-3/" data-id="cuidiwqJL5OyuhUv4sS8SdLKW" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
     </footer>
   </div>
   
@@ -322,11 +1288,70 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        
+        <h3 id="IDENTIFIER"><a href="#IDENTIFIER" class="headerlink" title="IDENTIFIER"></a>IDENTIFIER</h3><p>Strong Positive Evidence:</p>
+<ol>
+<li>列名具备明确的ID含义</li>
+<li>数值之间具有较大的相似性</li>
+<li>重复程度比较低</li>
+</ol>
+<p>Weak Positive Evidence:</p>
+<ol>
+<li>整数</li>
+<li></li>
+</ol>
+<p>Strong Negative Evidence:</p>
+<ol>
+<li>可用于算数运算</li>
+<li>包含小数</li>
+</ol>
+<p>Decision Rule:<br>IF 有强正面证据支持<br>AND 没有强的负面证据支持<br>THEN IDENTIFIER</p>
+<h3 id="NUMBER"><a href="#NUMBER" class="headerlink" title="NUMBER"></a>NUMBER</h3><p>Strong Positive Evidence:</p>
+<ol>
+<li>列名明确表示是一个数字，例如容量，人数等</li>
+<li>内容都是数字</li>
+<li>值可用于数字运算</li>
+</ol>
+<p>Weak Positive Evidence:<br>1.<br>2.</p>
+<p>Strong Negative Evidence:</p>
+<ol>
+<li>非数字的字符串</li>
+<li>排列整齐的数字，例如电话，身份证等</li>
+</ol>
+<p>Decision Rule:<br>IF …<br>THEN NUMBER</p>
+<h3 id="DATE"><a href="#DATE" class="headerlink" title="DATE"></a>DATE</h3><p>Strong Positive Evidence:</p>
+<ol>
+<li>列名中包含日期</li>
+<li>符合年月日的日期格式</li>
+<li>统计值最大最小值都是有效日期</li>
+</ol>
+<p>Weak Positive Evidence:</p>
+<ol>
+<li>样本值符合日期格式</li>
+<li></li>
+</ol>
+<p>Strong Negative Evidence:</p>
+<ol>
+<li>数值不是符合日期格式的字符串</li>
+<li>数值可用于运算</li>
+</ol>
+<p>Decision Rule:<br>IF …<br>THEN DATE</p>
+<h3 id="UNKNOWN"><a href="#UNKNOWN" class="headerlink" title="UNKNOWN"></a>UNKNOWN</h3><p>Return UNKNOWN if:</p>
+<ol>
+<li>对于两种类型都有强证据支持</li>
+<li>没有强证据支持</li>
+<li>有互相矛盾的强证据支持</li>
+</ol>
+<p>unknown_reason:</p>
+<ul>
+<li>INSUFFICIENT_EVIDENCE</li>
+<li>CONFLICTING_EVIDENCE</li>
+<li>OUT_OF_TAXONOMY</li>
+</ul>
+
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3-2/" data-id="cuidt0EV5ckVAs3BsEbP5_EWg" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/11/day3-2/" data-id="cuidhltO2hi2vSY5jbNyUbBf6" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -350,11 +1375,40 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        
+        <p>IDENTIFIER<br>NUMBER<br>DATE<br>PHONE<br>PERSON_NAME<br>TEXT<br>UNKNOWN</p>
+<p>column_name: user_id</p>
+<p>samples:<br>[“10001”,”10002”,”10003”,”10004”]</p>
+<p>statistics:<br>unique_ratio: 1.0</p>
+<p>正向证据：列名的语义，样本值的结构，统计意义也支持<br>反向证据没有<br>输出：<br>IDENTIFIER<br>原因：都是支持的证据，不存在冲突</p>
+<p>column_name: value</p>
+<p>samples:<br>[“10001”,”10002”,”10003”,”10004”]</p>
+<p>statistics:<br>unique_ratio: 1.0</p>
+<p>正向证据：列名语义倾向于number<br>反向证据：样本结构不支持，number应该是不同位数的；统计意义也不支持，数字应该是可以重复的；<br>出现互相矛盾的证据</p>
+<p>输出：UNKNOWN<br>原因：支持的证据和不支持的证据都很强烈</p>
+<p>column_name: phone</p>
+<p>samples:<br>[“13800138000”,”13900139000”,”13700137000”]</p>
+<p>statistics:<br>unique_ratio: 0.95</p>
+<p>正向证据：列名的语义，值的结构也像是电话，统计的唯一性也像电话<br>反向证据：无<br>输出：PHONE<br>原因：正向证据支持</p>
+<p>column_name: phone</p>
+<p>samples:<br>[“Tom”,”Jerry”,”Alice”]</p>
+<p>statistics:<br>unique_ratio: 0.80</p>
+<p>positive：列名的语义支持PHONE<br>negative：但是samples强烈不支持phone<br>唯一性弱支持phone<br>conflict：</p>
+<p>输出：<br>UNKNOWN<br>原因：存在冲突的证据</p>
+<p>column_name: birthday</p>
+<p>samples:<br>[“19900103”,”19880521”,”20011212”]</p>
+<p>statistics:<br>valid_YYYYMMDD_ratio: 1.0</p>
+<p>正向证据：列名的语义支持date，samples的结构支持date，统计结果弱支持date<br>反向证据：无<br>DATE<br>有明确的证据支持</p>
+<p>column_name: batch_id</p>
+<p>samples:<br>[“20260101”,”20260102”,”20260103”, “…”]</p>
+<p>statistics:<br>row_count: 1,000,000<br>distinct_count: 365<br>unique_ratio: 0.000365<br>valid_YYYYMMDD_ratio: 1.0<br>min: “20260101”<br>max: “20261231”</p>
+<p>positive:<br>列名语义支持ID<br>negative:<br>数值强烈支持DATE<br>统计值强烈支持DATE</p>
+<p>最终分类：<br>UNKNOWN</p>
+<p>原因：<br>双方都有强证据支持，不能判断</p>
+
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3/" data-id="cuidvTQNsHFJU4jbx0AISbLyZ" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/11/day3/" data-id="cuidr7naXMbMpamAHs9S53r2o" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -863,7 +1917,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/10/day2/" data-id="cuidlk45h-8p60gg6hz_RrJ6B" data-title="Day2 - Taxonomy 第一关练习" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/10/day2/" data-id="cuidWtc9uKL3e92G58hPi7loM" data-title="Day2 - Taxonomy 第一关练习" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1408,7 +2462,7 @@ result:
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/09/%E6%8F%90%E7%A4%BA%E8%AF%8D%E7%BB%83%E4%B9%A0/" data-id="cuidnc3-o2UXv4EAKbjwPS0j5" data-title="提示词练习" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/09/%E6%8F%90%E7%A4%BA%E8%AF%8D%E7%BB%83%E4%B9%A0/" data-id="cuid7PvVwJu7J8B32AwqET_Wj" data-title="提示词练习" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1453,58 +2507,7 @@ result:
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/07/%E5%AD%A6%E4%B9%A0openai%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" data-id="cuid73XDBA2w0xAMOBfnCVg61" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-hello-world" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/07/hello-world/" class="article-date">
-  <time class="dt-published" datetime="2026-09-07T12:56:37.429Z" itemprop="datePublished">2026-09-07</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/09/07/hello-world/">Hello World</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/07/hello-world/" data-id="cuidCqSm3dZ0DK1gtBV1ixLrc" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/07/%E5%AD%A6%E4%B9%A0openai%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" data-id="cuid7JqAnfPdRTUU06Fq0d3vG" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1517,6 +2520,11 @@ result:
 
   
 
+
+  <nav id="page-nav">
+    
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
+  </nav>
 
 </section>
         
@@ -1529,7 +2537,7 @@ result:
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li></ul>
     </div>
   </div>
 
@@ -1539,7 +2547,7 @@ result:
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 20px;">提示词工程</a>
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a>
     </div>
   </div>
 
@@ -1561,23 +2569,23 @@ result:
       <ul>
         
           <li>
+            <a href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4-lession%202/">Day4 - 第 2 课：Agent 八个核心部件如何协作</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4%20prompt%20vs%20skill/">Day4 - Prompt vs Skill</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/">Day4 - Agent 的 8 个层次</a>
+          </li>
+        
+          <li>
             <a href="/2026/09/11/day3-blog/">Day3 - Decision Rule 设计</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/11/day3-3/">(no title)</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/11/day3-2/">(no title)</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/11/day3/">(no title)</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/10/day2/">Day2 - Taxonomy 第一关练习</a>
           </li>
         
       </ul>

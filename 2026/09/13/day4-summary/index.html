@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Day4 - 学习总结 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="今日 Agent 学习要点Q1：什么是 Skill？A：Agent 中一项可复用的能力，类似软件工程中的 Service &#x2F; Capability。 Q2：什么是 Prompt？A：指导 LLM 执行某个认知动作的 Instructions，是 Skill 的组成部分之一。 Q3：Skill 和 Prompt 的关系是什么？A：Skill ≠ Prompt。一个 Skill 可以包含 P">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Day4 - 学习总结">
+<meta property="og:url" content="https://busymoon.github.io/2026/09/13/day4-summary/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="今日 Agent 学习要点Q1：什么是 Skill？A：Agent 中一项可复用的能力，类似软件工程中的 Service &#x2F; Capability。 Q2：什么是 Prompt？A：指导 LLM 执行某个认知动作的 Instructions，是 Skill 的组成部分之一。 Q3：Skill 和 Prompt 的关系是什么？A：Skill ≠ Prompt。一个 Skill 可以包含 P">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-13T02:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-13T06:43:44.412Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://busymoon.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-day4-summary" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/13/day4-summary/" class="article-date">
+  <time class="dt-published" datetime="2026-09-13T02:30:00.000Z" itemprop="datePublished">2026-09-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Day4 - 学习总结
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h3 id="今日-Agent-学习要点"><a href="#今日-Agent-学习要点" class="headerlink" title="今日 Agent 学习要点"></a>今日 Agent 学习要点</h3><p><strong>Q1：什么是 Skill？</strong><br>A：Agent 中一项可复用的能力，类似软件工程中的 Service &#x2F; Capability。</p>
+<p><strong>Q2：什么是 Prompt？</strong><br>A：指导 LLM 执行某个认知动作的 Instructions，是 Skill 的组成部分之一。</p>
+<p><strong>Q3：Skill 和 Prompt 的关系是什么？</strong><br>A：Skill ≠ Prompt。一个 Skill 可以包含 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Output Schema、Eval 等，也可以包含多次 LLM 调用。</p>
+<p><strong>Q4：Workflow 和 Skill 的关系是什么？</strong><br>A：Workflow 负责组织多个 Skill&#x2F;Tool 完成整体目标；Skill 负责提供具体能力。</p>
+<p><strong>Q5：Prompt、Context 的区别是什么？</strong><br>A：Prompt 决定“怎么做”；Context 决定“这一次做的时候知道什么”。</p>
+<p><strong>Q6：Taxonomy 是什么？</strong><br>A：定义系统中“有哪些概念&#x2F;答案”。</p>
+<p><strong>Q7：Decision Policy 是什么？</strong><br>A：定义如何根据证据从多个候选答案中做出判断。</p>
+<p><strong>Q8：Few-shot 是什么？</strong><br>A：通过具体案例向模型示范如何应用抽象的 Policy。</p>
+<p><strong>Q9：Tool 是什么？</strong><br>A：Agent 用于获取信息、执行计算、验证结果或改变外部环境的确定性能力。</p>
+<p><strong>Q10：什么时候应该用 Tool，而不是 LLM？</strong><br>A：能够通过确定性计算、查询、验证或转换得到的结果，优先交给 Tool。</p>
+<p><strong>Q11：Eval 是什么？</strong><br>A：衡量 Skill&#x2F;Agent 是否正确，以及修改后是否真正改善、是否产生 Regression。</p>
+<p><strong>Q12：Agent 的核心运行循环是什么？</strong><br>A：<code>Observe → Decide → Act → Observe</code>，直到 Goal 完成或终止。</p>
+<p><strong>Q13：Observe 是什么？</strong><br>A：Agent 获取当前环境、任务和工具执行结果等信息。</p>
+<p><strong>Q14：Decide 是什么？</strong><br>A：根据 Goal、State、Context、Policy 和 Available Actions 决定下一步行动。</p>
+<p><strong>Q15：Act 是什么？</strong><br>A：调用 Tool、Skill、Human 等执行 Decision，产生新的 Observation。</p>
+<p><strong>Q16：为什么同一个错误结果可能有不同原因？</strong><br>A：可能是 Observe 信息缺失、Decide 判断错误，也可能是 Act 执行错误，需要 Failure Decomposition。</p>
+<p><strong>Q17：什么是 State？</strong><br>A：描述当前任务“现在做到哪里、处于什么状态”。</p>
+<p><strong>Q18：什么是 Context？</strong><br>A：为了当前这一次 Decision，选择让模型看到的信息。</p>
+<p><strong>Q19：什么是 Memory？</strong><br>A：从过去经历中保留下来、未来任务可能再次使用的信息。</p>
+<p><strong>Q20：什么是 History？</strong><br>A：记录过去发生过什么；History 是“怎么走到这里”，State 是“现在在哪里”。</p>
+<p><strong>Q21：Memory 和 Knowledge 有什么区别？</strong><br>A：Memory 主要来自历史运行和交互经验；Knowledge 是相对稳定、权威、经过治理的外部知识。</p>
+<p><strong>Q22：Memory 是否一定要变成 Knowledge？</strong><br>A：不一定。只有经过审核、治理后，部分 Memory 才可能沉淀为正式 Knowledge。</p>
+<p><strong>Q23：Memory 如何影响未来 Decision？</strong><br>A：<code>Memory → Retrieval → Context → LLM → Decision</code>。</p>
+<p><strong>Q24：Memory 系统最核心的两个问题是什么？</strong><br>A：什么时候记（Memory Write Policy）和什么时候想起来（Memory Retrieval Policy）。</p>
+<p><strong>Q25：State、Context、Memory 最简单的记忆方式是什么？</strong><br>A：<code>State = Where am I?</code>；<code>Context = What do I need to know now?</code>；<code>Memory = What from the past should I remember?</code></p>
+<p><strong>Q26：Context 的信息可以来自哪里？</strong><br>A：State、Observation、History、Memory、Knowledge、Tool Results、用户输入等。</p>
+<p><strong>Q27：Context Engineering 的核心是什么？</strong><br>A：为当前 Goal + State + Decision 选择最合适的信息，而不是简单把所有信息塞给 LLM。</p>
+<p><strong>Q28：Agent 架构设计中的重要原则是什么？</strong><br>A：结果错误时不要默认“改 Prompt”，先定位错误属于 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Workflow、State&#x2F;Memory 还是其他层。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/13/day4-summary/" data-id="cuidPXyCgn83_Vk8DSvnv7Fw1" data-title="Day4 - 学习总结" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/09/13/day4-lession%202/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Day4 - 第 2 课：Agent 八个核心部件如何协作</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4-lession%202/">Day4 - 第 2 课：Agent 八个核心部件如何协作</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4%20prompt%20vs%20skill/">Day4 - Prompt vs Skill</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/">Day4 - Agent 的 8 个层次</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/11/day3-blog/">Day3 - Decision Rule 设计</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
