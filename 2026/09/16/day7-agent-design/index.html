@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Day7 - Agent Design | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="对，这才是更关键的问题。前面讲的是 “Agent 怎么运行”；你现在问的是更上游的 “Agent 怎么设计出来”。 我建议把它理解成一个 业务问题 → Agent Specification → Agent Runtime 的转换过程。不要一拿到需求就开始画 LLM → Tool → LLM。 一、先建立一个 7 步设计法以后你拿到任何业务问题，都先走这条链： 123456789101112131">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Day7 - Agent Design">
+<meta property="og:url" content="https://busymoon.github.io/2026/09/16/day7-agent-design/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="对，这才是更关键的问题。前面讲的是 “Agent 怎么运行”；你现在问的是更上游的 “Agent 怎么设计出来”。 我建议把它理解成一个 业务问题 → Agent Specification → Agent Runtime 的转换过程。不要一拿到需求就开始画 LLM → Tool → LLM。 一、先建立一个 7 步设计法以后你拿到任何业务问题，都先走这条链： 123456789101112131">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-16T14:22:54.000Z">
+<meta property="article:modified_time" content="2026-09-16T14:24:16.665Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="设计">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://busymoon.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-day7-agent-design" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/16/day7-agent-design/" class="article-date">
+  <time class="dt-published" datetime="2026-09-16T14:22:54.000Z" itemprop="datePublished">2026-09-16</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Day7 - Agent Design
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>对，这才是更关键的问题。前面讲的是 <strong>“Agent 怎么运行”</strong>；你现在问的是更上游的 <strong>“Agent 怎么设计出来”</strong>。</p>
+<p>我建议把它理解成一个 <strong>业务问题 → Agent Specification → Agent Runtime</strong> 的转换过程。不要一拿到需求就开始画 <code>LLM → Tool → LLM</code>。</p>
+<h2 id="一、先建立一个-7-步设计法"><a href="#一、先建立一个-7-步设计法" class="headerlink" title="一、先建立一个 7 步设计法"></a>一、先建立一个 7 步设计法</h2><p>以后你拿到任何业务问题，都先走这条链：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">业务问题</span><br><span class="line">   ↓</span><br><span class="line">1. 定义 Goal</span><br><span class="line">   ↓</span><br><span class="line">2. 定义 Environment</span><br><span class="line">   ↓</span><br><span class="line">3. 找出需要动态 Decision 的地方</span><br><span class="line">   ↓</span><br><span class="line">4. 定义 Action / Tool</span><br><span class="line">   ↓</span><br><span class="line">5. 定义 State</span><br><span class="line">   ↓</span><br><span class="line">6. 定义 Policy / Stop Condition</span><br><span class="line">   ↓</span><br><span class="line">7. 形成 Agent Loop</span><br></pre></td></tr></table></figure>
+
+<p>其中<strong>第 3 步最重要</strong>。因为它决定：</p>
+<blockquote>
+<p>这个问题到底需不需要 Agent，以及 LLM 应该拥有多大的自主决策权。</p>
+</blockquote>
+<p>我们拿你很熟悉的 <strong>XPath 自动修复</strong>完整走一遍。</p>
+<hr>
+<h1 id="1-第一步不是设计流程，而是定义-Goal"><a href="#1-第一步不是设计流程，而是定义-Goal" class="headerlink" title="1. 第一步不是设计流程，而是定义 Goal"></a>1. 第一步不是设计流程，而是定义 Goal</h1><p>业务人员可能告诉你：</p>
+<blockquote>
+<p>很多网站 XPath 经常失效，希望用大模型自动修复。</p>
+</blockquote>
+<p>这还不能直接拿来做 Agent。</p>
+<p>先转换成 Goal：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Goal：</span><br><span class="line"></span><br><span class="line">发现失效的采集规则，</span><br><span class="line">分析失败原因，</span><br><span class="line">生成候选 XPath，</span><br><span class="line">验证候选 XPath，</span><br><span class="line">找到满足质量要求的 XPath。</span><br></pre></td></tr></table></figure>
+
+<p>这里有个重要变化：</p>
+<p><strong>业务需求描述的是“想解决什么问题”；Agent Goal 描述的是“什么状态算任务完成”。</strong></p>
+<p>所以最好进一步写成机器可判断的：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Success:</span><br><span class="line"></span><br><span class="line">xpath_valid = true</span><br><span class="line">matched_nodes &gt; 0</span><br><span class="line">content_quality &gt;= threshold</span><br></pre></td></tr></table></figure>
+
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Business Requirement</span><br><span class="line">        ↓</span><br><span class="line">      Goal</span><br><span class="line">        ↓</span><br><span class="line">Success Criteria</span><br></pre></td></tr></table></figure>
+
+<p>这是第一层转换。</p>
+<hr>
+<h1 id="2-第二步：Environment——Agent-能看到什么世界？"><a href="#2-第二步：Environment——Agent-能看到什么世界？" class="headerlink" title="2. 第二步：Environment——Agent 能看到什么世界？"></a>2. 第二步：Environment——Agent 能看到什么世界？</h1><p>Agent不可能直接理解你的整个业务系统。</p>
+<p>你要规定它的世界边界：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Environment</span><br><span class="line"></span><br><span class="line">网站</span><br><span class="line">MongoDB</span><br><span class="line">采集系统</span><br><span class="line">XPath配置库</span><br><span class="line">历史修复记录</span><br><span class="line">测试环境</span><br></pre></td></tr></table></figure>
+
+<p>然后问：</p>
+<blockquote>
+<p>Agent 可以从这个世界里观察到什么？</p>
+</blockquote>
+<p>得到 Observation：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">URL</span><br><span class="line">当前 XPath</span><br><span class="line">HTML</span><br><span class="line">最近采集数据</span><br><span class="line">XPath 命中数量</span><br><span class="line">正文内容</span><br><span class="line">历史 XPath</span><br><span class="line">错误日志</span><br></pre></td></tr></table></figure>
+
+<p>这一步实际上是在定义：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">World</span><br><span class="line">  ↓</span><br><span class="line">Observation</span><br><span class="line">  ↓</span><br><span class="line">Agent</span><br></pre></td></tr></table></figure>
+
+<p>Agent不是直接面对真实世界，而是面对<strong>经过程序转换后的 Observation</strong>。</p>
+<hr>
+<h1 id="3-第三步：找到-Decision-Point"><a href="#3-第三步：找到-Decision-Point" class="headerlink" title="3. 第三步：找到 Decision Point"></a>3. 第三步：找到 Decision Point</h1><p>这是整个 Agent 设计过程中最重要的一步。</p>
+<p>不要问：</p>
+<blockquote>
+<p>“这个流程有哪些步骤？”</p>
+</blockquote>
+<p>而要问：</p>
+<blockquote>
+<p><strong>“哪些地方不能提前写死，需要运行时根据当前情况决定？”</strong></p>
+</blockquote>
+<p>例如 XPath 修复。</p>
+<h3 id="决策点-A"><a href="#决策点-A" class="headerlink" title="决策点 A"></a>决策点 A</h3><p>XPath 命中 0。</p>
+<p>原因是什么？</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">网页改版？</span><br><span class="line">反爬页面？</span><br><span class="line">登录页？</span><br><span class="line">页面加载失败？</span><br><span class="line">XPath真的失效？</span><br></pre></td></tr></table></figure>
+
+<p>不能简单：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> matched == <span class="number">0</span>:</span><br><span class="line">    generate_xpath()</span><br></pre></td></tr></table></figure>
+
+<p>这里需要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Observation</span><br><span class="line">     ↓</span><br><span class="line">Reasoning</span><br><span class="line">     ↓</span><br><span class="line">Diagnosis Decision</span><br></pre></td></tr></table></figure>
+
+<p><strong>这是 Agent Decision Point。</strong></p>
+<h3 id="决策点-B"><a href="#决策点-B" class="headerlink" title="决策点 B"></a>决策点 B</h3><p>生成一个 XPath 后：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">匹配到了 17 个节点</span><br></pre></td></tr></table></figure>
+
+<p>但是：</p>
+<blockquote>
+<p>这17个节点是不是新闻正文？</p>
+</blockquote>
+<p>这也可能需要语义判断。</p>
+<p>又是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Observation</span><br><span class="line">     ↓</span><br><span class="line">LLM</span><br><span class="line">     ↓</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
+
+<h3 id="决策点-C"><a href="#决策点-C" class="headerlink" title="决策点 C"></a>决策点 C</h3><p>第一次生成失败：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">下一步怎么办？</span><br><span class="line"></span><br><span class="line">重新生成？</span><br><span class="line">换一种策略？</span><br><span class="line">重新获取网页？</span><br><span class="line">使用历史XPath？</span><br><span class="line">换模型？</span><br><span class="line">请求人工？</span><br><span class="line">放弃？</span><br></pre></td></tr></table></figure>
+
+<p>又是一个 Decision Point。</p>
+<hr>
+<h1 id="4-这一步会自然区分-Workflow-和-Agent"><a href="#4-这一步会自然区分-Workflow-和-Agent" class="headerlink" title="4. 这一步会自然区分 Workflow 和 Agent"></a>4. 这一步会自然区分 Workflow 和 Agent</h1><p>假设你的流程是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">下载HTML</span><br><span class="line"> ↓</span><br><span class="line">测试XPath</span><br><span class="line"> ↓</span><br><span class="line">失败</span><br><span class="line"> ↓</span><br><span class="line">生成XPath</span><br><span class="line"> ↓</span><br><span class="line">测试</span><br><span class="line"> ↓</span><br><span class="line">成功</span><br></pre></td></tr></table></figure>
+
+<p>其实未必需要 Agent。</p>
+<p>普通 Workflow：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">html = fetch(url)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> test(xpath):</span><br><span class="line">    xpath = llm_generate(html)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> test(xpath):</span><br><span class="line">    save(xpath)</span><br></pre></td></tr></table></figure>
+
+<p>就够了。</p>
+<p>但是现实情况是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">              XPath失败</span><br><span class="line">                  ↓</span><br><span class="line">            为什么失败？</span><br><span class="line">        ┌─────────┼─────────┐</span><br><span class="line">        ↓         ↓         ↓</span><br><span class="line">     网页改版    被封禁    登录页面</span><br><span class="line">        ↓         ↓         ↓</span><br><span class="line">     生成XPath    换IP      登录</span><br><span class="line">        ↓</span><br><span class="line">     验证结果</span><br><span class="line">        ↓</span><br><span class="line">      不理想</span><br><span class="line">        ↓</span><br><span class="line">    下一步怎么办？</span><br><span class="line">  ┌─────┼─────┐</span><br><span class="line">  ↓     ↓     ↓</span><br><span class="line">重试  换策略  人工</span><br></pre></td></tr></table></figure>
+
+<p>这时候<strong>路径不能完全预定义</strong>。</p>
+<p>Agent的价值才真正出现：</p>
+<blockquote>
+<p><strong>根据 Observation，在运行时选择下一步 Action。</strong></p>
+</blockquote>
+<p>所以我给你一个很实用的判断标准：</p>
+<p><strong>固定步骤多 → Workflow</strong></p>
+<p><strong>动态决策多 → Agent</strong></p>
+<hr>
+<h1 id="5-第四步：从-Decision-反推-Action"><a href="#5-第四步：从-Decision-反推-Action" class="headerlink" title="5. 第四步：从 Decision 反推 Action"></a>5. 第四步：从 Decision 反推 Action</h1><p>发现 Decision Point 后，不要急着写 Prompt。</p>
+<p>先问：</p>
+<blockquote>
+<p>Agent为了完成这些决策，需要拥有哪些行动能力？</p>
+</blockquote>
+<p>得到 Action Space：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Actions</span><br><span class="line"></span><br><span class="line">fetch_page</span><br><span class="line">test_xpath</span><br><span class="line">generate_xpath</span><br><span class="line">extract_content</span><br><span class="line">compare_content</span><br><span class="line">query_history</span><br><span class="line">retry</span><br><span class="line">request_human</span><br><span class="line">finish</span><br></pre></td></tr></table></figure>
+
+<p>然后才把其中需要外部执行的 Action 实现成 Tool：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">fetch_page(url)</span><br><span class="line"></span><br><span class="line">test_xpath(html, xpath)</span><br><span class="line"></span><br><span class="line">query_history(domain)</span><br><span class="line"></span><br><span class="line">save_xpath(url, xpath)</span><br></pre></td></tr></table></figure>
+
+<p>所以你之前学的 Tool，现在来源就清楚了：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Decision Point</span><br><span class="line"> ↓</span><br><span class="line">Possible Actions</span><br><span class="line"> ↓</span><br><span class="line">需要操作外部世界</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br></pre></td></tr></table></figure>
+
+<p><strong>不是先写一堆 Tool，再让 Agent 去用。</strong></p>
+<hr>
+<h1 id="6-第五步：从-Decision-反推-State"><a href="#6-第五步：从-Decision-反推-State" class="headerlink" title="6. 第五步：从 Decision 反推 State"></a>6. 第五步：从 Decision 反推 State</h1><p>现在问一个非常关键的问题：</p>
+<blockquote>
+<p>Agent 做下一次 Decision 的时候，需要知道什么？</p>
+</blockquote>
+<p>比如第二轮决策需要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">当前URL</span><br><span class="line">当前XPath</span><br><span class="line">XPath测试结果</span><br><span class="line">已经尝试次数</span><br><span class="line">尝试过哪些XPath</span><br><span class="line">失败原因</span><br><span class="line">当前HTML</span><br></pre></td></tr></table></figure>
+
+<p>这些就是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">State</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">state = &#123;</span><br><span class="line">    <span class="string">&quot;url&quot;</span>: <span class="string">&quot;...&quot;</span>,</span><br><span class="line">    <span class="string">&quot;current_xpath&quot;</span>: <span class="string">&quot;...&quot;</span>,</span><br><span class="line">    <span class="string">&quot;html&quot;</span>: <span class="string">&quot;...&quot;</span>,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;attempt&quot;</span>: <span class="number">2</span>,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;tested_xpaths&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;...&quot;</span>,</span><br><span class="line">        <span class="string">&quot;...&quot;</span></span><br><span class="line">    ],</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;last_result&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;matched&quot;</span>: <span class="number">0</span></span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;diagnosis&quot;</span>: <span class="string">&quot;DOM_CHANGED&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以 State 也不是凭空设计出来的。</p>
+<p>它来源于：</p>
+<blockquote>
+<p><strong>下一步 Decision 需要哪些信息。</strong></p>
+</blockquote>
+<p>这句话非常重要。</p>
+<hr>
+<h1 id="7-第六步：把“不能交给-LLM-的决定”变成-Policy"><a href="#7-第六步：把“不能交给-LLM-的决定”变成-Policy" class="headerlink" title="7. 第六步：把“不能交给 LLM 的决定”变成 Policy"></a>7. 第六步：把“不能交给 LLM 的决定”变成 Policy</h1><p>现在 Agent 已经有自主能力了。</p>
+<p>但是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LLM：</span><br><span class="line">XPath修好了。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">deploy_to_production</span><br></pre></td></tr></table></figure>
+
+<p>能不能直接执行？</p>
+<p>不能。</p>
+<p>所以设计 Agent 时必须再问：</p>
+<blockquote>
+<p><strong>哪些 Decision 可以让 LLM 自己决定，哪些必须由 Code &#x2F; Policy 决定？</strong></p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">最大重试次数 = 3</span><br><span class="line">                 → Code</span><br><span class="line"></span><br><span class="line">质量分数 &gt; 0.95</span><br><span class="line">                 → Code</span><br><span class="line"></span><br><span class="line">生产部署需要人工确认</span><br><span class="line">                 → Policy</span><br><span class="line"></span><br><span class="line">禁止访问非目标域名</span><br><span class="line">                 → Policy</span><br><span class="line"></span><br><span class="line">LLM判断正文语义正确</span><br><span class="line">                 → LLM</span><br><span class="line"></span><br><span class="line">判断网页为什么异常</span><br><span class="line">                 → LLM</span><br></pre></td></tr></table></figure>
+
+<p>这里有一个非常实用的原则：</p>
+<blockquote>
+<p><strong>确定性的事情尽量 Code。</strong></p>
+<p><strong>不确定、语义性、需要推理的事情交给 LLM。</strong></p>
+<p><strong>安全边界交给 Policy。</strong></p>
+</blockquote>
+<p>这样设计出来的 Agent 会稳定很多。</p>
+<hr>
+<h1 id="8-最后才得到-Agent-Loop"><a href="#8-最后才得到-Agent-Loop" class="headerlink" title="8. 最后才得到 Agent Loop"></a>8. 最后才得到 Agent Loop</h1><p>经过前面六步，现在根本不需要“凭感觉画流程”。</p>
+<p>它自己就长出来了：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">         Goal</span><br><span class="line">          ↓</span><br><span class="line">     Build State</span><br><span class="line">          ↓</span><br><span class="line">   Build Context</span><br><span class="line">          ↓</span><br><span class="line">        LLM</span><br><span class="line">          ↓</span><br><span class="line">      Decision</span><br><span class="line">          ↓</span><br><span class="line">    Choose Action</span><br><span class="line">          ↓</span><br><span class="line">    Policy Check</span><br><span class="line">          ↓</span><br><span class="line">        Tool</span><br><span class="line">          ↓</span><br><span class="line">      Result</span><br><span class="line">          ↓</span><br><span class="line">    Observation</span><br><span class="line">          ↓</span><br><span class="line">    Update State</span><br><span class="line">          ↓</span><br><span class="line">Success / Failure？</span><br><span class="line">   ↓            ↓</span><br><span class="line"> YES            NO</span><br><span class="line">   ↓            │</span><br><span class="line">Finish ←─────────┘</span><br></pre></td></tr></table></figure>
+
+<p>这时候才进入 AgentScope。</p>
+<hr>
+<h1 id="9-所以-AgentScope-应该最后出现"><a href="#9-所以-AgentScope-应该最后出现" class="headerlink" title="9. 所以 AgentScope 应该最后出现"></a>9. 所以 AgentScope 应该最后出现</h1><p>这是你现在特别需要建立的设计习惯。</p>
+<p>不要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">业务需求</span><br><span class="line"> ↓</span><br><span class="line">AgentScope</span><br><span class="line"> ↓</span><br><span class="line">写Agent</span><br></pre></td></tr></table></figure>
+
+<p>而应该：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">    业务问题</span><br><span class="line">       ↓</span><br><span class="line">     Goal</span><br><span class="line">       ↓</span><br><span class="line"> Success Criteria</span><br><span class="line">       ↓</span><br><span class="line">  Environment</span><br><span class="line">       ↓</span><br><span class="line"> Observation Space</span><br><span class="line">       ↓</span><br><span class="line">  Decision Points</span><br><span class="line">       ↓</span><br><span class="line">   Action Space</span><br><span class="line">       ↓</span><br><span class="line">      State</span><br><span class="line">       ↓</span><br><span class="line">Policy / Guardrail</span><br><span class="line">       ↓</span><br><span class="line">Stop Conditions</span><br><span class="line">       ↓</span><br><span class="line"> Agent Specification</span><br><span class="line">       ↓</span><br><span class="line">   AgentScope</span><br><span class="line">       ↓</span><br><span class="line">Engineering Code</span><br></pre></td></tr></table></figure>
+
+<p><strong>AgentScope只是最后的实现框架。</strong></p>
+<p>前面这一大段才叫：</p>
+<h1 id="Agent-Design"><a href="#Agent-Design" class="headerlink" title="Agent Design"></a>Agent Design</h1><hr>
+<h2 id="你以后拿到业务问题，可以先填这一张表"><a href="#你以后拿到业务问题，可以先填这一张表" class="headerlink" title="你以后拿到业务问题，可以先填这一张表"></a>你以后拿到业务问题，可以先填这一张表</h2><table>
+<thead>
+<tr>
+<th>设计问题</th>
+<th>要回答什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Goal</td>
+<td>Agent最终要完成什么？</td>
+</tr>
+<tr>
+<td>Success</td>
+<td>怎么判断完成？</td>
+</tr>
+<tr>
+<td>Environment</td>
+<td>Agent工作在哪些系统中？</td>
+</tr>
+<tr>
+<td>Observation</td>
+<td>Agent能看到什么？</td>
+</tr>
+<tr>
+<td>Decision</td>
+<td>哪些地方需要动态判断？</td>
+</tr>
+<tr>
+<td>Action</td>
+<td>Agent可以采取什么行动？</td>
+</tr>
+<tr>
+<td>Tool</td>
+<td>哪些Action需要调用外部能力？</td>
+</tr>
+<tr>
+<td>State</td>
+<td>下一次决策必须记住什么？</td>
+</tr>
+<tr>
+<td>Policy</td>
+<td>哪些事情不能让LLM自由决定？</td>
+</tr>
+<tr>
+<td>Stop</td>
+<td>什么时候成功、失败、转人工？</td>
+</tr>
+</tbody></table>
+<p>我认为这里面最核心的不是 Prompt，甚至不是 Tool，而是三个东西：</p>
+<p><strong>Goal → Decision Point → Action Space</strong></p>
+<p>它们构成 Agent 的骨架；然后才由 <strong>State</strong> 支撑连续决策，由 <strong>Tool</strong> 执行动作，由 <strong>Policy</strong> 限制动作。</p>
+<hr>
+<p>下一步我建议我们不要继续用 XPath 这个例子，因为你已经太熟悉它了，容易产生“听懂了”的错觉。</p>
+<p>我可以给你一个<strong>完全陌生的真实业务需求</strong>，只给原始需求，不告诉你 Agent 怎么设计。你自己按照上面的 10 个问题一步步设计，我像做架构评审一样逐项挑战你的设计。这样你会真正学会 <strong>“业务问题 → Agent”</strong>，而不只是听懂 Agent。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/16/day7-agent-design/" data-id="cuidnl3aqJMnbcfTmy42HVfij" data-title="Day7 - Agent Design" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/09/16/day7-agent-scope/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Day7 - Agent Scope</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/09/16/day7-agent-design/">Day7 - Agent Design</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/16/day7-agent-scope/">Day7 - Agent Scope</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/14/day5-agent%20code%20explained/">Day5 - Agent 代码逐行解析</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4-lession%202/">Day4 - 第 2 课：Agent 八个核心部件如何协作</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

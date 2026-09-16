@@ -71,26 +71,516 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-day5-agent loop" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+    <article id="post-day7-agent-design" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2026/09/14/day5-agent%20loop/" class="article-date">
-  <time class="dt-published" datetime="2026-09-14T13:13:31.334Z" itemprop="datePublished">2026-09-14</time>
+    <a href="/2026/09/16/day7-agent-design/" class="article-date">
+  <time class="dt-published" datetime="2026-09-16T14:22:54.000Z" itemprop="datePublished">2026-09-16</time>
 </a>
     
   </div>
   <div class="article-inner">
     
     
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/16/day7-agent-design/">Day7 - Agent Design</a>
+    </h1>
+  
+
+      </header>
+    
     <div class="e-content article-entry" itemprop="articleBody">
       
-        
+        <p>对，这才是更关键的问题。前面讲的是 <strong>“Agent 怎么运行”</strong>；你现在问的是更上游的 <strong>“Agent 怎么设计出来”</strong>。</p>
+<p>我建议把它理解成一个 <strong>业务问题 → Agent Specification → Agent Runtime</strong> 的转换过程。不要一拿到需求就开始画 <code>LLM → Tool → LLM</code>。</p>
+<h2 id="一、先建立一个-7-步设计法"><a href="#一、先建立一个-7-步设计法" class="headerlink" title="一、先建立一个 7 步设计法"></a>一、先建立一个 7 步设计法</h2><p>以后你拿到任何业务问题，都先走这条链：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">业务问题</span><br><span class="line">   ↓</span><br><span class="line">1. 定义 Goal</span><br><span class="line">   ↓</span><br><span class="line">2. 定义 Environment</span><br><span class="line">   ↓</span><br><span class="line">3. 找出需要动态 Decision 的地方</span><br><span class="line">   ↓</span><br><span class="line">4. 定义 Action / Tool</span><br><span class="line">   ↓</span><br><span class="line">5. 定义 State</span><br><span class="line">   ↓</span><br><span class="line">6. 定义 Policy / Stop Condition</span><br><span class="line">   ↓</span><br><span class="line">7. 形成 Agent Loop</span><br></pre></td></tr></table></figure>
+
+<p>其中<strong>第 3 步最重要</strong>。因为它决定：</p>
+<blockquote>
+<p>这个问题到底需不需要 Agent，以及 LLM 应该拥有多大的自主决策权。</p>
+</blockquote>
+<p>我们拿你很熟悉的 <strong>XPath 自动修复</strong>完整走一遍。</p>
+<hr>
+<h1 id="1-第一步不是设计流程，而是定义-Goal"><a href="#1-第一步不是设计流程，而是定义-Goal" class="headerlink" title="1. 第一步不是设计流程，而是定义 Goal"></a>1. 第一步不是设计流程，而是定义 Goal</h1><p>业务人员可能告诉你：</p>
+<blockquote>
+<p>很多网站 XPath 经常失效，希望用大模型自动修复。</p>
+</blockquote>
+<p>这还不能直接拿来做 Agent。</p>
+<p>先转换成 Goal：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Goal：</span><br><span class="line"></span><br><span class="line">发现失效的采集规则，</span><br><span class="line">分析失败原因，</span><br><span class="line">生成候选 XPath，</span><br><span class="line">验证候选 XPath，</span><br><span class="line">找到满足质量要求的 XPath。</span><br></pre></td></tr></table></figure>
+
+<p>这里有个重要变化：</p>
+<p><strong>业务需求描述的是“想解决什么问题”；Agent Goal 描述的是“什么状态算任务完成”。</strong></p>
+<p>所以最好进一步写成机器可判断的：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Success:</span><br><span class="line"></span><br><span class="line">xpath_valid = true</span><br><span class="line">matched_nodes &gt; 0</span><br><span class="line">content_quality &gt;= threshold</span><br></pre></td></tr></table></figure>
+
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Business Requirement</span><br><span class="line">        ↓</span><br><span class="line">      Goal</span><br><span class="line">        ↓</span><br><span class="line">Success Criteria</span><br></pre></td></tr></table></figure>
+
+<p>这是第一层转换。</p>
+<hr>
+<h1 id="2-第二步：Environment——Agent-能看到什么世界？"><a href="#2-第二步：Environment——Agent-能看到什么世界？" class="headerlink" title="2. 第二步：Environment——Agent 能看到什么世界？"></a>2. 第二步：Environment——Agent 能看到什么世界？</h1><p>Agent不可能直接理解你的整个业务系统。</p>
+<p>你要规定它的世界边界：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Environment</span><br><span class="line"></span><br><span class="line">网站</span><br><span class="line">MongoDB</span><br><span class="line">采集系统</span><br><span class="line">XPath配置库</span><br><span class="line">历史修复记录</span><br><span class="line">测试环境</span><br></pre></td></tr></table></figure>
+
+<p>然后问：</p>
+<blockquote>
+<p>Agent 可以从这个世界里观察到什么？</p>
+</blockquote>
+<p>得到 Observation：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">URL</span><br><span class="line">当前 XPath</span><br><span class="line">HTML</span><br><span class="line">最近采集数据</span><br><span class="line">XPath 命中数量</span><br><span class="line">正文内容</span><br><span class="line">历史 XPath</span><br><span class="line">错误日志</span><br></pre></td></tr></table></figure>
+
+<p>这一步实际上是在定义：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">World</span><br><span class="line">  ↓</span><br><span class="line">Observation</span><br><span class="line">  ↓</span><br><span class="line">Agent</span><br></pre></td></tr></table></figure>
+
+<p>Agent不是直接面对真实世界，而是面对<strong>经过程序转换后的 Observation</strong>。</p>
+<hr>
+<h1 id="3-第三步：找到-Decision-Point"><a href="#3-第三步：找到-Decision-Point" class="headerlink" title="3. 第三步：找到 Decision Point"></a>3. 第三步：找到 Decision Point</h1><p>这是整个 Agent 设计过程中最重要的一步。</p>
+<p>不要问：</p>
+<blockquote>
+<p>“这个流程有哪些步骤？”</p>
+</blockquote>
+<p>而要问：</p>
+<blockquote>
+<p><strong>“哪些地方不能提前写死，需要运行时根据当前情况决定？”</strong></p>
+</blockquote>
+<p>例如 XPath 修复。</p>
+<h3 id="决策点-A"><a href="#决策点-A" class="headerlink" title="决策点 A"></a>决策点 A</h3><p>XPath 命中 0。</p>
+<p>原因是什么？</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">网页改版？</span><br><span class="line">反爬页面？</span><br><span class="line">登录页？</span><br><span class="line">页面加载失败？</span><br><span class="line">XPath真的失效？</span><br></pre></td></tr></table></figure>
+
+<p>不能简单：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> matched == <span class="number">0</span>:</span><br><span class="line">    generate_xpath()</span><br></pre></td></tr></table></figure>
+
+<p>这里需要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Observation</span><br><span class="line">     ↓</span><br><span class="line">Reasoning</span><br><span class="line">     ↓</span><br><span class="line">Diagnosis Decision</span><br></pre></td></tr></table></figure>
+
+<p><strong>这是 Agent Decision Point。</strong></p>
+<h3 id="决策点-B"><a href="#决策点-B" class="headerlink" title="决策点 B"></a>决策点 B</h3><p>生成一个 XPath 后：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">匹配到了 17 个节点</span><br></pre></td></tr></table></figure>
+
+<p>但是：</p>
+<blockquote>
+<p>这17个节点是不是新闻正文？</p>
+</blockquote>
+<p>这也可能需要语义判断。</p>
+<p>又是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Observation</span><br><span class="line">     ↓</span><br><span class="line">LLM</span><br><span class="line">     ↓</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
+
+<h3 id="决策点-C"><a href="#决策点-C" class="headerlink" title="决策点 C"></a>决策点 C</h3><p>第一次生成失败：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">下一步怎么办？</span><br><span class="line"></span><br><span class="line">重新生成？</span><br><span class="line">换一种策略？</span><br><span class="line">重新获取网页？</span><br><span class="line">使用历史XPath？</span><br><span class="line">换模型？</span><br><span class="line">请求人工？</span><br><span class="line">放弃？</span><br></pre></td></tr></table></figure>
+
+<p>又是一个 Decision Point。</p>
+<hr>
+<h1 id="4-这一步会自然区分-Workflow-和-Agent"><a href="#4-这一步会自然区分-Workflow-和-Agent" class="headerlink" title="4. 这一步会自然区分 Workflow 和 Agent"></a>4. 这一步会自然区分 Workflow 和 Agent</h1><p>假设你的流程是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">下载HTML</span><br><span class="line"> ↓</span><br><span class="line">测试XPath</span><br><span class="line"> ↓</span><br><span class="line">失败</span><br><span class="line"> ↓</span><br><span class="line">生成XPath</span><br><span class="line"> ↓</span><br><span class="line">测试</span><br><span class="line"> ↓</span><br><span class="line">成功</span><br></pre></td></tr></table></figure>
+
+<p>其实未必需要 Agent。</p>
+<p>普通 Workflow：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">html = fetch(url)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> test(xpath):</span><br><span class="line">    xpath = llm_generate(html)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> test(xpath):</span><br><span class="line">    save(xpath)</span><br></pre></td></tr></table></figure>
+
+<p>就够了。</p>
+<p>但是现实情况是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">              XPath失败</span><br><span class="line">                  ↓</span><br><span class="line">            为什么失败？</span><br><span class="line">        ┌─────────┼─────────┐</span><br><span class="line">        ↓         ↓         ↓</span><br><span class="line">     网页改版    被封禁    登录页面</span><br><span class="line">        ↓         ↓         ↓</span><br><span class="line">     生成XPath    换IP      登录</span><br><span class="line">        ↓</span><br><span class="line">     验证结果</span><br><span class="line">        ↓</span><br><span class="line">      不理想</span><br><span class="line">        ↓</span><br><span class="line">    下一步怎么办？</span><br><span class="line">  ┌─────┼─────┐</span><br><span class="line">  ↓     ↓     ↓</span><br><span class="line">重试  换策略  人工</span><br></pre></td></tr></table></figure>
+
+<p>这时候<strong>路径不能完全预定义</strong>。</p>
+<p>Agent的价值才真正出现：</p>
+<blockquote>
+<p><strong>根据 Observation，在运行时选择下一步 Action。</strong></p>
+</blockquote>
+<p>所以我给你一个很实用的判断标准：</p>
+<p><strong>固定步骤多 → Workflow</strong></p>
+<p><strong>动态决策多 → Agent</strong></p>
+<hr>
+<h1 id="5-第四步：从-Decision-反推-Action"><a href="#5-第四步：从-Decision-反推-Action" class="headerlink" title="5. 第四步：从 Decision 反推 Action"></a>5. 第四步：从 Decision 反推 Action</h1><p>发现 Decision Point 后，不要急着写 Prompt。</p>
+<p>先问：</p>
+<blockquote>
+<p>Agent为了完成这些决策，需要拥有哪些行动能力？</p>
+</blockquote>
+<p>得到 Action Space：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Actions</span><br><span class="line"></span><br><span class="line">fetch_page</span><br><span class="line">test_xpath</span><br><span class="line">generate_xpath</span><br><span class="line">extract_content</span><br><span class="line">compare_content</span><br><span class="line">query_history</span><br><span class="line">retry</span><br><span class="line">request_human</span><br><span class="line">finish</span><br></pre></td></tr></table></figure>
+
+<p>然后才把其中需要外部执行的 Action 实现成 Tool：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">fetch_page(url)</span><br><span class="line"></span><br><span class="line">test_xpath(html, xpath)</span><br><span class="line"></span><br><span class="line">query_history(domain)</span><br><span class="line"></span><br><span class="line">save_xpath(url, xpath)</span><br></pre></td></tr></table></figure>
+
+<p>所以你之前学的 Tool，现在来源就清楚了：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Decision Point</span><br><span class="line"> ↓</span><br><span class="line">Possible Actions</span><br><span class="line"> ↓</span><br><span class="line">需要操作外部世界</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br></pre></td></tr></table></figure>
+
+<p><strong>不是先写一堆 Tool，再让 Agent 去用。</strong></p>
+<hr>
+<h1 id="6-第五步：从-Decision-反推-State"><a href="#6-第五步：从-Decision-反推-State" class="headerlink" title="6. 第五步：从 Decision 反推 State"></a>6. 第五步：从 Decision 反推 State</h1><p>现在问一个非常关键的问题：</p>
+<blockquote>
+<p>Agent 做下一次 Decision 的时候，需要知道什么？</p>
+</blockquote>
+<p>比如第二轮决策需要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">当前URL</span><br><span class="line">当前XPath</span><br><span class="line">XPath测试结果</span><br><span class="line">已经尝试次数</span><br><span class="line">尝试过哪些XPath</span><br><span class="line">失败原因</span><br><span class="line">当前HTML</span><br></pre></td></tr></table></figure>
+
+<p>这些就是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">State</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">state = &#123;</span><br><span class="line">    <span class="string">&quot;url&quot;</span>: <span class="string">&quot;...&quot;</span>,</span><br><span class="line">    <span class="string">&quot;current_xpath&quot;</span>: <span class="string">&quot;...&quot;</span>,</span><br><span class="line">    <span class="string">&quot;html&quot;</span>: <span class="string">&quot;...&quot;</span>,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;attempt&quot;</span>: <span class="number">2</span>,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;tested_xpaths&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;...&quot;</span>,</span><br><span class="line">        <span class="string">&quot;...&quot;</span></span><br><span class="line">    ],</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;last_result&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;matched&quot;</span>: <span class="number">0</span></span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;diagnosis&quot;</span>: <span class="string">&quot;DOM_CHANGED&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以 State 也不是凭空设计出来的。</p>
+<p>它来源于：</p>
+<blockquote>
+<p><strong>下一步 Decision 需要哪些信息。</strong></p>
+</blockquote>
+<p>这句话非常重要。</p>
+<hr>
+<h1 id="7-第六步：把“不能交给-LLM-的决定”变成-Policy"><a href="#7-第六步：把“不能交给-LLM-的决定”变成-Policy" class="headerlink" title="7. 第六步：把“不能交给 LLM 的决定”变成 Policy"></a>7. 第六步：把“不能交给 LLM 的决定”变成 Policy</h1><p>现在 Agent 已经有自主能力了。</p>
+<p>但是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LLM：</span><br><span class="line">XPath修好了。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">deploy_to_production</span><br></pre></td></tr></table></figure>
+
+<p>能不能直接执行？</p>
+<p>不能。</p>
+<p>所以设计 Agent 时必须再问：</p>
+<blockquote>
+<p><strong>哪些 Decision 可以让 LLM 自己决定，哪些必须由 Code &#x2F; Policy 决定？</strong></p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">最大重试次数 = 3</span><br><span class="line">                 → Code</span><br><span class="line"></span><br><span class="line">质量分数 &gt; 0.95</span><br><span class="line">                 → Code</span><br><span class="line"></span><br><span class="line">生产部署需要人工确认</span><br><span class="line">                 → Policy</span><br><span class="line"></span><br><span class="line">禁止访问非目标域名</span><br><span class="line">                 → Policy</span><br><span class="line"></span><br><span class="line">LLM判断正文语义正确</span><br><span class="line">                 → LLM</span><br><span class="line"></span><br><span class="line">判断网页为什么异常</span><br><span class="line">                 → LLM</span><br></pre></td></tr></table></figure>
+
+<p>这里有一个非常实用的原则：</p>
+<blockquote>
+<p><strong>确定性的事情尽量 Code。</strong></p>
+<p><strong>不确定、语义性、需要推理的事情交给 LLM。</strong></p>
+<p><strong>安全边界交给 Policy。</strong></p>
+</blockquote>
+<p>这样设计出来的 Agent 会稳定很多。</p>
+<hr>
+<h1 id="8-最后才得到-Agent-Loop"><a href="#8-最后才得到-Agent-Loop" class="headerlink" title="8. 最后才得到 Agent Loop"></a>8. 最后才得到 Agent Loop</h1><p>经过前面六步，现在根本不需要“凭感觉画流程”。</p>
+<p>它自己就长出来了：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">         Goal</span><br><span class="line">          ↓</span><br><span class="line">     Build State</span><br><span class="line">          ↓</span><br><span class="line">   Build Context</span><br><span class="line">          ↓</span><br><span class="line">        LLM</span><br><span class="line">          ↓</span><br><span class="line">      Decision</span><br><span class="line">          ↓</span><br><span class="line">    Choose Action</span><br><span class="line">          ↓</span><br><span class="line">    Policy Check</span><br><span class="line">          ↓</span><br><span class="line">        Tool</span><br><span class="line">          ↓</span><br><span class="line">      Result</span><br><span class="line">          ↓</span><br><span class="line">    Observation</span><br><span class="line">          ↓</span><br><span class="line">    Update State</span><br><span class="line">          ↓</span><br><span class="line">Success / Failure？</span><br><span class="line">   ↓            ↓</span><br><span class="line"> YES            NO</span><br><span class="line">   ↓            │</span><br><span class="line">Finish ←─────────┘</span><br></pre></td></tr></table></figure>
+
+<p>这时候才进入 AgentScope。</p>
+<hr>
+<h1 id="9-所以-AgentScope-应该最后出现"><a href="#9-所以-AgentScope-应该最后出现" class="headerlink" title="9. 所以 AgentScope 应该最后出现"></a>9. 所以 AgentScope 应该最后出现</h1><p>这是你现在特别需要建立的设计习惯。</p>
+<p>不要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">业务需求</span><br><span class="line"> ↓</span><br><span class="line">AgentScope</span><br><span class="line"> ↓</span><br><span class="line">写Agent</span><br></pre></td></tr></table></figure>
+
+<p>而应该：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">    业务问题</span><br><span class="line">       ↓</span><br><span class="line">     Goal</span><br><span class="line">       ↓</span><br><span class="line"> Success Criteria</span><br><span class="line">       ↓</span><br><span class="line">  Environment</span><br><span class="line">       ↓</span><br><span class="line"> Observation Space</span><br><span class="line">       ↓</span><br><span class="line">  Decision Points</span><br><span class="line">       ↓</span><br><span class="line">   Action Space</span><br><span class="line">       ↓</span><br><span class="line">      State</span><br><span class="line">       ↓</span><br><span class="line">Policy / Guardrail</span><br><span class="line">       ↓</span><br><span class="line">Stop Conditions</span><br><span class="line">       ↓</span><br><span class="line"> Agent Specification</span><br><span class="line">       ↓</span><br><span class="line">   AgentScope</span><br><span class="line">       ↓</span><br><span class="line">Engineering Code</span><br></pre></td></tr></table></figure>
+
+<p><strong>AgentScope只是最后的实现框架。</strong></p>
+<p>前面这一大段才叫：</p>
+<h1 id="Agent-Design"><a href="#Agent-Design" class="headerlink" title="Agent Design"></a>Agent Design</h1><hr>
+<h2 id="你以后拿到业务问题，可以先填这一张表"><a href="#你以后拿到业务问题，可以先填这一张表" class="headerlink" title="你以后拿到业务问题，可以先填这一张表"></a>你以后拿到业务问题，可以先填这一张表</h2><table>
+<thead>
+<tr>
+<th>设计问题</th>
+<th>要回答什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Goal</td>
+<td>Agent最终要完成什么？</td>
+</tr>
+<tr>
+<td>Success</td>
+<td>怎么判断完成？</td>
+</tr>
+<tr>
+<td>Environment</td>
+<td>Agent工作在哪些系统中？</td>
+</tr>
+<tr>
+<td>Observation</td>
+<td>Agent能看到什么？</td>
+</tr>
+<tr>
+<td>Decision</td>
+<td>哪些地方需要动态判断？</td>
+</tr>
+<tr>
+<td>Action</td>
+<td>Agent可以采取什么行动？</td>
+</tr>
+<tr>
+<td>Tool</td>
+<td>哪些Action需要调用外部能力？</td>
+</tr>
+<tr>
+<td>State</td>
+<td>下一次决策必须记住什么？</td>
+</tr>
+<tr>
+<td>Policy</td>
+<td>哪些事情不能让LLM自由决定？</td>
+</tr>
+<tr>
+<td>Stop</td>
+<td>什么时候成功、失败、转人工？</td>
+</tr>
+</tbody></table>
+<p>我认为这里面最核心的不是 Prompt，甚至不是 Tool，而是三个东西：</p>
+<p><strong>Goal → Decision Point → Action Space</strong></p>
+<p>它们构成 Agent 的骨架；然后才由 <strong>State</strong> 支撑连续决策，由 <strong>Tool</strong> 执行动作，由 <strong>Policy</strong> 限制动作。</p>
+<hr>
+<p>下一步我建议我们不要继续用 XPath 这个例子，因为你已经太熟悉它了，容易产生“听懂了”的错觉。</p>
+<p>我可以给你一个<strong>完全陌生的真实业务需求</strong>，只给原始需求，不告诉你 Agent 怎么设计。你自己按照上面的 10 个问题一步步设计，我像做架构评审一样逐项挑战你的设计。这样你会真正学会 <strong>“业务问题 → Agent”</strong>，而不只是听懂 Agent。</p>
+
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/14/day5-agent%20loop/" data-id="cuidYFDxgeT1dvTpo6gN70GG6" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/16/day7-agent-design/" data-id="cuidnl3aqJMnbcfTmy42HVfij" data-title="Day7 - Agent Design" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-day7-agent-scope" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/16/day7-agent-scope/" class="article-date">
+  <time class="dt-published" datetime="2026-09-16T14:15:14.000Z" itemprop="datePublished">2026-09-16</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/16/day7-agent-scope/">Day7 - Agent Scope</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>好，这次我们不再停留在“AgentScope 有哪些功能”，而是进入你前面真正关心的深层问题：</p>
+<blockquote>
+<p><strong>一个 Agent 在代码层面到底是怎么跑起来的？</strong></p>
+</blockquote>
+<p>我刚看了当前 AgentScope 2.0 的 <code>Agent</code> 实现。当前源码已经把 <code>model / toolkit / middlewares / state / context_config / react_config</code> 等明确拆开，而且 Middleware 可以介入 reply、reasoning、permission、acting、model call、context compression、system prompt 等阶段。(<a target="_blank" rel="noopener" href="https://github.com/agentscope-ai/agentscope/blob/main/src/agentscope/agent/_agent.py?utm_source=chatgpt.com" title="agentscope&#x2F;src&#x2F;agentscope&#x2F;agent&#x2F;_agent.py at main · agentscope-ai&#x2F;agentscope · GitHub">GitHub</a>)</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/agentscope-ai/agentscope?utm_source=chatgpt.com">AgentScope 2.0 源码</a></p>
+<p>我们今天先攻一个核心问题：<strong>Agent Loop 到底是谁在控制？</strong></p>
+<hr>
+<h2 id="1-先纠正一个很重要的认识"><a href="#1-先纠正一个很重要的认识" class="headerlink" title="1. 先纠正一个很重要的认识"></a>1. 先纠正一个很重要的认识</h2><p>我们之前画过：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Context</span><br><span class="line">   ↓</span><br><span class="line">LLM</span><br><span class="line">   ↓</span><br><span class="line">Decision</span><br><span class="line">   ↓</span><br><span class="line">Action</span><br><span class="line">   ↓</span><br><span class="line">Tool</span><br><span class="line">   ↓</span><br><span class="line">Observation</span><br><span class="line">   ↓</span><br><span class="line">State Update</span><br><span class="line">   ↓</span><br><span class="line">下一轮</span><br></pre></td></tr></table></figure>
+
+<p>很容易产生一个错觉：</p>
+<blockquote>
+<p>LLM 在控制 Agent。</p>
+</blockquote>
+<p>其实不是。</p>
+<p>真正控制 Agent 的是：</p>
+<p><strong>Agent Runtime &#x2F; Code。</strong></p>
+<p>LLM只是这个循环里的一个“决策函数”。</p>
+<p>可以抽象成：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> <span class="keyword">not</span> finished:</span><br><span class="line"></span><br><span class="line">    context = build_context(state, memory)</span><br><span class="line"></span><br><span class="line">    decision = llm(context)</span><br><span class="line"></span><br><span class="line">    action = parse(decision)</span><br><span class="line"></span><br><span class="line">    result = execute(action)</span><br><span class="line"></span><br><span class="line">    state = update_state(state, result)</span><br></pre></td></tr></table></figure>
+
+<p>这里：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">while                 → Code</span><br><span class="line">build_context()       → Code</span><br><span class="line">llm(context)          → LLM</span><br><span class="line">parse()               → Code</span><br><span class="line">execute()             → Code</span><br><span class="line">update_state()        → Code</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Agent 的主体不是 LLM。</strong></p>
+<p><strong>Agent &#x3D; Runtime + LLM + State + Tool + Context + Policy</strong></p>
+</blockquote>
+<p>这个认识非常重要。</p>
+<hr>
+<h1 id="2-那么-AgentScope-里的-Agent-Loop-在哪里？"><a href="#2-那么-AgentScope-里的-Agent-Loop-在哪里？" class="headerlink" title="2. 那么 AgentScope 里的 Agent Loop 在哪里？"></a>2. 那么 AgentScope 里的 Agent Loop 在哪里？</h1><p>当前 AgentScope <code>Agent</code> 的 <code>_reply()</code> 是一个重要入口，真正的执行会进入 <code>_reply_impl()</code>；同时 <code>_reply()</code> 外面还可以套 middleware chain。源码注释甚至明确说明，middleware 可以拦截 <code>ReplyEndEvent</code>，从而强制 Agent 再进行一轮 reasoning&#x2F;acting。(<a target="_blank" rel="noopener" href="https://github.com/agentscope-ai/agentscope/blob/main/src/agentscope/agent/_agent.py?utm_source=chatgpt.com" title="agentscope&#x2F;src&#x2F;agentscope&#x2F;agent&#x2F;_agent.py at main · agentscope-ai&#x2F;agentscope · GitHub">GitHub</a>)</p>
+<p>把复杂代码先全部拿掉，可以理解成：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">reply</span>(<span class="params">user_input</span>):</span><br><span class="line"></span><br><span class="line">    state.add(user_input)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line"></span><br><span class="line">        action = next_action(state)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> action == REASONING:</span><br><span class="line">            result = <span class="keyword">await</span> reasoning()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">elif</span> action == ACTING:</span><br><span class="line">            result = <span class="keyword">await</span> acting()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> finished:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result</span><br></pre></td></tr></table></figure>
+
+<p>注意：</p>
+<p><strong>这里有两个不同层次的 Decision。</strong></p>
+<p>这是今天第一个真正需要理解的新东西。</p>
+<hr>
+<h1 id="3-Decision-其实分两层"><a href="#3-Decision-其实分两层" class="headerlink" title="3. Decision 其实分两层"></a>3. Decision 其实分两层</h1><p>我们以前说：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LLM → Decision → Action</span><br></pre></td></tr></table></figure>
+
+<p>这个没错，但不完整。</p>
+<p>生产 Agent 实际上更像：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">       Runtime Decision</span><br><span class="line">              ↓</span><br><span class="line">   现在应该 Reasoning？</span><br><span class="line">   还是 Acting？</span><br><span class="line">   还是 Finish？</span><br><span class="line">              ↓</span><br><span class="line">      ┌───────┴───────┐</span><br><span class="line">      ↓               ↓</span><br><span class="line">  Reasoning          Acting</span><br><span class="line">      ↓               ↓</span><br><span class="line">     LLM             Tool</span><br><span class="line">      ↓               ↓</span><br><span class="line">LLM Decision      Tool Result</span><br></pre></td></tr></table></figure>
+
+<p>所以存在：</p>
+<h3 id="第一层：Runtime-Decision"><a href="#第一层：Runtime-Decision" class="headerlink" title="第一层：Runtime Decision"></a>第一层：Runtime Decision</h3><p>这是<strong>代码决定</strong>的。</p>
+<p>比如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">现在有用户新消息</span><br><span class="line">→ Reasoning</span><br><span class="line"></span><br><span class="line">LLM刚刚产生tool_call</span><br><span class="line">→ Acting</span><br><span class="line"></span><br><span class="line">Tool已经返回结果</span><br><span class="line">→ Reasoning</span><br><span class="line"></span><br><span class="line">LLM产生最终答案</span><br><span class="line">→ Finish</span><br></pre></td></tr></table></figure>
+
+<p>这其实是一个：</p>
+<p><strong>State Machine。</strong></p>
+<hr>
+<h1 id="4-第二层才是-LLM-Decision"><a href="#4-第二层才是-LLM-Decision" class="headerlink" title="4. 第二层才是 LLM Decision"></a>4. 第二层才是 LLM Decision</h1><p>假设现在 Runtime 判断：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Next Action = Reasoning</span><br></pre></td></tr></table></figure>
+
+<p>于是调用：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">result = model(context)</span><br></pre></td></tr></table></figure>
+
+<p>LLM看到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">用户：</span><br><span class="line">帮我判断这个网页XPath是不是失效了。</span><br><span class="line"></span><br><span class="line">Current XPath:</span><br><span class="line">//div[@class=&#x27;article&#x27;]</span><br><span class="line"></span><br><span class="line">HTML:</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>LLM可能输出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">我要先测试XPath。</span><br><span class="line"></span><br><span class="line">tool_call:</span><br><span class="line">    test_xpath(</span><br><span class="line">        xpath=&quot;//div[@class=&#x27;article&#x27;]&quot;</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<p>这个才是：</p>
+<p><strong>LLM Decision。</strong></p>
+<p>于是关系变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Runtime</span><br><span class="line">   │</span><br><span class="line">   │ 决定执行 Reasoning</span><br><span class="line">   ↓</span><br><span class="line">LLM</span><br><span class="line">   │</span><br><span class="line">   │ 决定调用 test_xpath</span><br><span class="line">   ↓</span><br><span class="line">Action</span><br><span class="line">   ↓</span><br><span class="line">Tool</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Runtime决定“什么时候让LLM决定”。</strong></p>
+<p><strong>LLM决定“现在具体做什么”。</strong></p>
+</blockquote>
+<p>这两个 Decision 一定不要混在一起。</p>
+<hr>
+<h1 id="5-Tool-执行完以后发生什么？"><a href="#5-Tool-执行完以后发生什么？" class="headerlink" title="5. Tool 执行完以后发生什么？"></a>5. Tool 执行完以后发生什么？</h1><p>假设：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">test_xpath(...)</span><br></pre></td></tr></table></figure>
+
+<p>返回：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">matched_nodes = 0</span><br></pre></td></tr></table></figure>
+
+<p>很多人会认为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Tool Result</span><br><span class="line">    ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>实际上中间还有非常关键的一层：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Tool Result</span><br><span class="line">    ↓</span><br><span class="line">Observation</span><br><span class="line">    ↓</span><br><span class="line">State</span><br><span class="line">    ↓</span><br><span class="line">Context</span><br><span class="line">    ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Tool Result</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">   &quot;xpath&quot;: &quot;//div[@class=&#x27;article&#x27;]&quot;,</span><br><span class="line">   &quot;matched&quot;: 0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是原始结果。</p>
+<p>经过 Agent Runtime 以后，它可能被包装成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Observation</span><br><span class="line"></span><br><span class="line">Tool test_xpath executed successfully.</span><br><span class="line">XPath matched 0 nodes.</span><br></pre></td></tr></table></figure>
+
+<p>然后写入当前 Agent State。</p>
+<hr>
+<h1 id="6-State-才是整个-Agent-Loop-的核心"><a href="#6-State-才是整个-Agent-Loop-的核心" class="headerlink" title="6. State 才是整个 Agent Loop 的核心"></a>6. State 才是整个 Agent Loop 的核心</h1><p>假设一开始：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">State S0</span><br><span class="line"></span><br><span class="line">User:</span><br><span class="line">检查XPath</span><br></pre></td></tr></table></figure>
+
+<p>第一次 reasoning：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">S0</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">Action:</span><br><span class="line">test_xpath()</span><br></pre></td></tr></table></figure>
+
+<p>执行以后：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">State S1</span><br><span class="line"></span><br><span class="line">User:</span><br><span class="line">检查XPath</span><br><span class="line"></span><br><span class="line">Assistant:</span><br><span class="line">call test_xpath()</span><br><span class="line"></span><br><span class="line">Tool:</span><br><span class="line">matched = 0</span><br></pre></td></tr></table></figure>
+
+<p>然后：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">S1</span><br><span class="line"> ↓</span><br><span class="line">build_context()</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>LLM第二次看到的已经不是 S0。</p>
+<p>而是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">User:</span><br><span class="line">检查XPath</span><br><span class="line"></span><br><span class="line">Assistant:</span><br><span class="line">我调用了 test_xpath</span><br><span class="line"></span><br><span class="line">Tool:</span><br><span class="line">XPath匹配0个节点</span><br></pre></td></tr></table></figure>
+
+<p>所以 LLM 得出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">旧XPath失效。</span><br><span class="line"></span><br><span class="line">下一步：</span><br><span class="line">generate_xpath()</span><br></pre></td></tr></table></figure>
+
+<p>再执行。</p>
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">S0</span><br><span class="line"> ↓</span><br><span class="line">Decision</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br><span class="line"> ↓</span><br><span class="line">S1</span><br><span class="line"> ↓</span><br><span class="line">Decision</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br><span class="line"> ↓</span><br><span class="line">S2</span><br><span class="line"> ↓</span><br><span class="line">Decision</span><br><span class="line"> ↓</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>这其实就是：</p>
+<h1 id="State-Transition"><a href="#State-Transition" class="headerlink" title="State Transition"></a>State Transition</h1><hr>
+<h1 id="7-现在你应该能理解-Agent-的本质了"><a href="#7-现在你应该能理解-Agent-的本质了" class="headerlink" title="7. 现在你应该能理解 Agent 的本质了"></a>7. 现在你应该能理解 Agent 的本质了</h1><p>我们以前学习：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">State</span><br><span class="line">Memory</span><br><span class="line">Context</span><br><span class="line">Tool</span><br><span class="line">Observation</span><br><span class="line">Decision</span><br><span class="line">Action</span><br></pre></td></tr></table></figure>
+
+<p>这些看起来像七八个独立概念。</p>
+<p>现在把它们串起来：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">                  ┌──────────── Runtime ────────────┐</span><br><span class="line">                  │                                 │</span><br><span class="line">                  │         State S(n)              │</span><br><span class="line">                  │             │                   │</span><br><span class="line">                  │             ↓                   │</span><br><span class="line">Memory ───────→ Context Builder ←──── Knowledge    │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">                Context                             │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">                 LLM                                │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">               Decision                             │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">                Action                              │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">                 Tool                               │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">               Result                               │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">             Observation                            │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">           State Transition                         │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  ↓                                 │</span><br><span class="line">              State S(n+1)                          │</span><br><span class="line">                  │                                 │</span><br><span class="line">                  └──────────→ 下一轮 ──────────────┘</span><br></pre></td></tr></table></figure>
+
+<p><strong>外面这一大圈才叫 Agent。</strong></p>
+<p>LLM只是其中一个节点。</p>
+<hr>
+<h1 id="8-AgentScope-真正漂亮的地方现在就出现了"><a href="#8-AgentScope-真正漂亮的地方现在就出现了" class="headerlink" title="8. AgentScope 真正漂亮的地方现在就出现了"></a>8. AgentScope 真正漂亮的地方现在就出现了</h1><p>如果只是上面的循环，我们自己几十行 Python 就能写。</p>
+<p>AgentScope真正解决的是：</p>
+<p><strong>如何允许工程代码介入这个 Loop。</strong></p>
+<p>当前 AgentScope 明确提供这些 middleware hook：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">on_reply</span><br><span class="line">on_reasoning</span><br><span class="line">on_check_permission</span><br><span class="line">on_acting</span><br><span class="line">on_model_call</span><br><span class="line">on_system_prompt</span><br><span class="line">on_compress_context</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>(<a target="_blank" rel="noopener" href="https://github.com/agentscope-ai/agentscope/blob/main/src/agentscope/agent/_agent.py?utm_source=chatgpt.com" title="agentscope&#x2F;src&#x2F;agentscope&#x2F;agent&#x2F;_agent.py at main · agentscope-ai&#x2F;agentscope · GitHub">GitHub</a>)</p>
+<p>于是原来的：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Context</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br></pre></td></tr></table></figure>
+
+<p>变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">              Middleware</span><br><span class="line">                  ↓</span><br><span class="line">            System Prompt</span><br><span class="line">                  ↓</span><br><span class="line">              Context</span><br><span class="line">                  ↓</span><br><span class="line">        ┌── Middleware ──┐</span><br><span class="line">        ↓                │</span><br><span class="line">       LLM               │</span><br><span class="line">        ↓                │</span><br><span class="line">    Reasoning ────────────┘</span><br><span class="line">        ↓</span><br><span class="line">     Decision</span><br><span class="line">        ↓</span><br><span class="line">Permission Middleware</span><br><span class="line">        ↓</span><br><span class="line">      Action</span><br><span class="line">        ↓</span><br><span class="line"> Acting Middleware</span><br><span class="line">        ↓</span><br><span class="line">       Tool</span><br></pre></td></tr></table></figure>
+
+<p>这就开始接近真正的生产系统了。</p>
+<hr>
+<h1 id="9-用你的-XPath-修复-Agent-来看，就非常有意思"><a href="#9-用你的-XPath-修复-Agent-来看，就非常有意思" class="headerlink" title="9. 用你的 XPath 修复 Agent 来看，就非常有意思"></a>9. 用你的 XPath 修复 Agent 来看，就非常有意思</h1><p>假设 LLM 判断：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">我要执行：</span><br><span class="line"></span><br><span class="line">deploy_xpath(</span><br><span class="line">    website=&quot;xxx.com&quot;,</span><br><span class="line">    xpath=&quot;//article/div...&quot;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>如果没有 Policy：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">deploy_xpath()</span><br><span class="line"> ↓</span><br><span class="line">生产环境被修改</span><br></pre></td></tr></table></figure>
+
+<p>这是很危险的。</p>
+<p>AgentScope 可以在 permission&#x2F;middleware 层做：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> tool == <span class="string">&quot;deploy_xpath&quot;</span>:</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> environment == <span class="string">&quot;production&quot;</span>:</span><br><span class="line">        require_human_approval()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> xpath_test_score &lt; <span class="number">0.95</span>:</span><br><span class="line">        reject()</span><br></pre></td></tr></table></figure>
+
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">LLM Decision</span><br><span class="line">     ↓</span><br><span class="line">deploy_xpath</span><br><span class="line">     ↓</span><br><span class="line">┌───────────────┐</span><br><span class="line">│ Policy Guard  │</span><br><span class="line">└───────────────┘</span><br><span class="line">     ↓</span><br><span class="line"> allow / deny / ask</span><br><span class="line">     ↓</span><br><span class="line">Tool Execution</span><br></pre></td></tr></table></figure>
+
+<p>注意：</p>
+<p><strong>Policy并没有改变LLM。</strong></p>
+<p>Policy控制的是：</p>
+<blockquote>
+<p><strong>LLM产生的 Action 能不能真正执行。</strong></p>
+</blockquote>
+<p>这就是为什么我之前一直强调：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Decision Policy</span><br></pre></td></tr></table></figure>
+
+<p>和：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Execution Policy</span><br></pre></td></tr></table></figure>
+
+<p>不能混为一谈。</p>
+<hr>
+<h1 id="10-到这里，我们可以升级之前的-Agent-定义"><a href="#10-到这里，我们可以升级之前的-Agent-定义" class="headerlink" title="10. 到这里，我们可以升级之前的 Agent 定义"></a>10. 到这里，我们可以升级之前的 Agent 定义</h1><p>你以前可以认为：</p>
+<blockquote>
+<p>Agent 是能够 Reasoning + Tool Calling 的 LLM。</p>
+</blockquote>
+<p>现在应该升级成：</p>
+<blockquote>
+<p><strong>Agent 是一个以 State 为核心，由 Runtime 驱动，通过 Context 将当前世界状态交给 LLM 做 Decision，再通过 Policy 控制 Action、Tool 改变状态，并不断进行 State Transition 的运行系统。</strong></p>
+</blockquote>
+<p>可以进一步压缩成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">=</span><br><span class="line">State Machine</span><br><span class="line">+</span><br><span class="line">LLM Decision Engine</span><br><span class="line">+</span><br><span class="line">Tool Runtime</span><br><span class="line">+</span><br><span class="line">Context Engine</span><br><span class="line">+</span><br><span class="line">Policy</span><br><span class="line">+</span><br><span class="line">Memory</span><br></pre></td></tr></table></figure>
+
+<p>这个理解已经比“ReAct &#x3D; Thought → Action → Observation”深了一层。</p>
+<hr>
+<h2 id="下一步最值得学的东西"><a href="#下一步最值得学的东西" class="headerlink" title="下一步最值得学的东西"></a>下一步最值得学的东西</h2><p>下一节我建议我们暂时<strong>不讲 Memory，也不讲 Multi-Agent</strong>。</p>
+<p>直接深入：</p>
+<h1 id="State-Machine"><a href="#State-Machine" class="headerlink" title="State Machine"></a><code>State Machine</code></h1><p>因为一旦理解 State Machine，你会突然发现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Workflow</span><br><span class="line">Plan</span><br><span class="line">Agent Loop</span><br><span class="line">State</span><br><span class="line">State Transition</span><br><span class="line">Tool</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
+
+<p>其实不是七个零散概念，而是<strong>同一个运行系统的不同部分</strong>。</p>
+<p>甚至你之前问的：</p>
+<blockquote>
+<p><strong>Workflow 和 Agent 到底有什么本质区别？</strong></p>
+</blockquote>
+<p>也会变得非常清楚。</p>
+<p>下一节我们可以直接拿你的 <strong>XPath 自动修复 Agent</strong>，把它画成一个真正的状态机：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">INIT</span><br><span class="line"> ↓</span><br><span class="line">FETCH_PAGE</span><br><span class="line"> ↓</span><br><span class="line">CHECK_XPATH</span><br><span class="line"> ↓</span><br><span class="line">FAILED?</span><br><span class="line"> ├─ No → FINISH</span><br><span class="line"> │</span><br><span class="line"> Yes</span><br><span class="line"> ↓</span><br><span class="line">DIAGNOSE</span><br><span class="line"> ↓</span><br><span class="line">GENERATE_XPATH</span><br><span class="line"> ↓</span><br><span class="line">VALIDATE</span><br><span class="line"> ↓</span><br><span class="line">PASS?</span><br><span class="line"> ├─ No → RETRY</span><br><span class="line"> │</span><br><span class="line"> Yes</span><br><span class="line"> ↓</span><br><span class="line">WAIT_APPROVAL</span><br><span class="line"> ↓</span><br><span class="line">DEPLOY</span><br><span class="line"> ↓</span><br><span class="line">FINISH</span><br></pre></td></tr></table></figure>
+
+<p>然后会出现一个非常有意思的问题：</p>
+<blockquote>
+<p><strong>既然状态和流程都已经由代码定义好了，那还需要 Agent 干什么？</strong></p>
+</blockquote>
+<p>这个问题正好能把 <strong>Workflow、LLM Workflow、Agent、Agentic Workflow</strong> 四者彻底区分开。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/16/day7-agent-scope/" data-id="cuid0PCIRrJ1O_APqqGAZee7s" data-title="Day7 - Agent Scope" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li></ul>
+
     </footer>
   </div>
   
@@ -470,7 +960,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/14/day5-agent%20code%20explained/" data-id="cuidtLzPa1yPZQO5OtjcmP5i6" data-title="Day5 - Agent 代码逐行解析" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/14/day5-agent%20code%20explained/" data-id="cuidyDDa-zxVzXxc3bHLzkC33" data-title="Day5 - Agent 代码逐行解析" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -538,7 +1028,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/13/day4-summary/" data-id="cuidPXyCgn83_Vk8DSvnv7Fw1" data-title="Day4 - 学习总结" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/13/day4-summary/" data-id="cuidW9N-VTmwDnNucjTxXKqLw" data-title="Day4 - 学习总结" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -839,7 +1329,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/13/day4-lession%202/" data-id="cuid2W5ByBtL5R2IIOseQjPuJ" data-title="Day4 - 第 2 课：Agent 八个核心部件如何协作" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/13/day4-lession%202/" data-id="cuidOpgS7RuPTzQuhC4MQuiVk" data-title="Day4 - 第 2 课：Agent 八个核心部件如何协作" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1168,7 +1658,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/13/day4%20prompt%20vs%20skill/" data-id="cuidcTPv-QFC8Gbk7VuV5CR4f" data-title="Day4 - Prompt vs Skill" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/13/day4%20prompt%20vs%20skill/" data-id="cuidW1AzjT5uEwH_VZlz-1_TE" data-title="Day4 - Prompt vs Skill" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1464,7 +1954,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/" data-id="cuidM9usnc57Eb-pdGYXe7qqp" data-title="Day4 - Agent 的 8 个层次" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/" data-id="cuidYASHCtE8u9MxQ3NgFImPX" data-title="Day4 - Agent 的 8 个层次" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1675,7 +2165,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3-blog/" data-id="cuidRSIydXP6KSny4BsoUHVcu" data-title="Day3 - Decision Rule 设计" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/11/day3-blog/" data-id="cuidQCPERd42Uyh3bfZSYZe_K" data-title="Day3 - Decision Rule 设计" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1764,7 +2254,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3-2/" data-id="cuidhltO2hi2vSY5jbNyUbBf6" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/11/day3-2/" data-id="cuid5mq_dAzR0p_6L7aGaPJxX" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1821,521 +2311,10 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3/" data-id="cuidr7naXMbMpamAHs9S53r2o" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://busymoon.github.io/2026/09/11/day3/" data-id="cuidp7kj8Y4oTTMyfxHibSp6v" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-day2" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/10/day2/" class="article-date">
-  <time class="dt-published" datetime="2026-09-10T13:31:22.000Z" itemprop="datePublished">2026-09-10</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/09/10/day2/">Day2 - Taxonomy 第一关练习</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>好。第一关我们只练 <strong>Taxonomy &#x2F; Ontology 设计</strong>，暂时不讨论 Prompt 怎么写。目标是让你建立一个很重要的习惯：</p>
-<blockquote>
-<p><strong>模型分类效果不好时，先检查“分类体系是否可判定”，而不是先修改 Prompt。</strong></p>
-</blockquote>
-<h2 id="第一关：Taxonomy-Ontology"><a href="#第一关：Taxonomy-Ontology" class="headerlink" title="第一关：Taxonomy &#x2F; Ontology"></a>第一关：Taxonomy &#x2F; Ontology</h2><p>先区分两个概念。在我们这个训练里，不必把它们学得特别学术。</p>
-<p><strong>Taxonomy</strong> 关注“有哪些类别，以及类别之间如何组织”。例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Field</span><br><span class="line">├── Identifier</span><br><span class="line">├── Person</span><br><span class="line">│   ├── PersonName</span><br><span class="line">│   └── Gender</span><br><span class="line">├── Contact</span><br><span class="line">│   ├── Phone</span><br><span class="line">│   └── Email</span><br><span class="line">├── Location</span><br><span class="line">│   ├── Address</span><br><span class="line">│   └── PostalCode</span><br><span class="line">└── Temporal</span><br><span class="line">    ├── Date</span><br><span class="line">    └── Datetime</span><br></pre></td></tr></table></figure>
-
-<p><strong>Ontology</strong> 更进一步，除了“是什么”，还关注概念的<strong>属性、关系和约束</strong>。例如 <code>phone</code> 属于 ContactInfo，可能具有 <code>country_code</code>、<code>area_code</code>；<code>birthday</code> 属于 Date，但同时描述 Person 的出生时间。</p>
-<p>你目前做 CSV Agent，第一阶段重点掌握 <strong>Taxonomy + 清晰的 category definition</strong> 就够了。</p>
-<hr>
-<h3 id="一个好的分类体系，要过-5-个检查"><a href="#一个好的分类体系，要过-5-个检查" class="headerlink" title="一个好的分类体系，要过 5 个检查"></a>一个好的分类体系，要过 5 个检查</h3><p>我建议你以后记住这五个词：</p>
-<p><strong>MECE + Operational + Abstain。</strong></p>
-<p>其中 MECE 是：</p>
-<blockquote>
-<p><strong>Mutually Exclusive：尽量互斥</strong><br><strong>Collectively Exhaustive：尽量完备</strong></p>
-</blockquote>
-<p>再加三个工程要求：</p>
-<blockquote>
-<p><strong>Operational：定义必须可操作、可判断</strong><br><strong>Boundary：相似类别之间有明确边界</strong><br><strong>Abstain：证据不足允许 unknown &#x2F; other，而不是逼模型猜</strong></p>
-</blockquote>
-<p>例如下面这个 taxonomy：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">id</span><br><span class="line">number</span><br><span class="line">phone</span><br><span class="line">date</span><br><span class="line">name</span><br><span class="line">text</span><br></pre></td></tr></table></figure>
-
-<p>表面看没问题，实际上非常危险。</p>
-<p>比如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">001234</span><br></pre></td></tr></table></figure>
-
-<p>它可能同时满足：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">number</span><br><span class="line">id</span><br><span class="line">phone的一部分</span><br><span class="line">text</span><br></pre></td></tr></table></figure>
-
-<p>所以 category 不能只描述<strong>数据长什么样</strong>，还要描述：</p>
-<blockquote>
-<p><strong>这个字段表达什么语义。</strong></p>
-</blockquote>
-<p>这是这一关最重要的知识点。</p>
-<hr>
-<h2 id="Category-Definition-的标准模板"><a href="#Category-Definition-的标准模板" class="headerlink" title="Category Definition 的标准模板"></a>Category Definition 的标准模板</h2><p>以后你定义一个 category，建议强制回答 6 个问题：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Category Name:</span><br><span class="line">Definition:</span><br><span class="line">Positive Evidence:</span><br><span class="line">Negative Evidence:</span><br><span class="line">Confusable Categories:</span><br><span class="line">Boundary Rule:</span><br></pre></td></tr></table></figure>
-
-<p>再加一些例子。</p>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">Category Name:</span><br><span class="line">NUMBER</span><br><span class="line"></span><br><span class="line">Definition:</span><br><span class="line">表示具有数量意义、通常可以参与数学运算的数值字段。</span><br><span class="line"></span><br><span class="line">Positive Evidence:</span><br><span class="line">- age</span><br><span class="line">- price</span><br><span class="line">- salary</span><br><span class="line">- quantity</span><br><span class="line">- weight</span><br><span class="line">- score</span><br><span class="line"></span><br><span class="line">Negative Evidence:</span><br><span class="line">虽然完全由数字组成，但仅用于标识实体的值不属于 NUMBER。</span><br><span class="line"></span><br><span class="line">Confusable Categories:</span><br><span class="line">IDENTIFIER</span><br><span class="line"></span><br><span class="line">Boundary Rule:</span><br><span class="line">如果数字主要用于“标识某个实体”，分类为 IDENTIFIER；</span><br><span class="line">如果数字表示“数量、测量值、金额或可计算值”，分类为 NUMBER。</span><br><span class="line"></span><br><span class="line">Examples:</span><br><span class="line">age = 25              → NUMBER</span><br><span class="line">price = 99.5          → NUMBER</span><br><span class="line">user_id = 1000123     → NOT NUMBER</span><br><span class="line">order_no = 20260901   → NOT NUMBER</span><br></pre></td></tr></table></figure>
-
-<p>注意最后两条。</p>
-<p><strong><code>20260901</code> 是不是数字格式，并不决定它是不是 NUMBER。</strong></p>
-<p>这就是从“数据格式分类”升级成“字段语义分类”。</p>
-<hr>
-<h1 id="第一关练习"><a href="#第一关练习" class="headerlink" title="第一关练习"></a>第一关练习</h1><p>现在假设我们正在设计 CSV 自动清洗 Agent 的第一版字段分类体系。</p>
-<p>暂定有以下 10 个 category：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER</span><br><span class="line">PERSON_NAME</span><br><span class="line">PHONE</span><br><span class="line">EMAIL</span><br><span class="line">ADDRESS</span><br><span class="line">DATE</span><br><span class="line">DATETIME</span><br><span class="line">NUMBER</span><br><span class="line">BOOLEAN</span><br><span class="line">TEXT</span><br></pre></td></tr></table></figure>
-
-<p>另外允许：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>现在给你下面 15 个字段：</p>
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>column_name</th>
-<th>sample_values</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>user_id</td>
-<td><code>[&quot;10001&quot;,&quot;10002&quot;,&quot;10003&quot;]</code></td>
-</tr>
-<tr>
-<td>2</td>
-<td>age</td>
-<td><code>[&quot;25&quot;,&quot;36&quot;,&quot;41&quot;]</code></td>
-</tr>
-<tr>
-<td>3</td>
-<td>name</td>
-<td><code>[&quot;Tom&quot;,&quot;Jerry&quot;,&quot;Alice&quot;]</code></td>
-</tr>
-<tr>
-<td>4</td>
-<td>phone</td>
-<td><code>[&quot;13800138000&quot;,&quot;13900139000&quot;]</code></td>
-</tr>
-<tr>
-<td>5</td>
-<td>email</td>
-<td><code>[&quot;tom@gmail.com&quot;,&quot;alice@abc.com&quot;]</code></td>
-</tr>
-<tr>
-<td>6</td>
-<td>birthday</td>
-<td><code>[&quot;1990-01-03&quot;,&quot;1988-05-21&quot;]</code></td>
-</tr>
-<tr>
-<td>7</td>
-<td>created_at</td>
-<td><code>[&quot;2026-09-10 12:31:22&quot;,&quot;2026-09-10 14:21:11&quot;]</code></td>
-</tr>
-<tr>
-<td>8</td>
-<td>address</td>
-<td><code>[&quot;北京市海淀区xxx路&quot;,&quot;上海市浦东新区xxx&quot;]</code></td>
-</tr>
-<tr>
-<td>9</td>
-<td>active</td>
-<td><code>[&quot;true&quot;,&quot;false&quot;,&quot;true&quot;]</code></td>
-</tr>
-<tr>
-<td>10</td>
-<td>salary</td>
-<td><code>[&quot;12000&quot;,&quot;18000&quot;,&quot;25000&quot;]</code></td>
-</tr>
-<tr>
-<td>11</td>
-<td>code</td>
-<td><code>[&quot;A001&quot;,&quot;A002&quot;,&quot;A003&quot;]</code></td>
-</tr>
-<tr>
-<td>12</td>
-<td>description</td>
-<td><code>[&quot;Software engineer&quot;,&quot;Product manager&quot;]</code></td>
-</tr>
-<tr>
-<td>13</td>
-<td>value</td>
-<td><code>[&quot;001&quot;,&quot;002&quot;,&quot;003&quot;]</code></td>
-</tr>
-<tr>
-<td>14</td>
-<td>number</td>
-<td><code>[&quot;20260901&quot;,&quot;20260902&quot;,&quot;20260903&quot;]</code></td>
-</tr>
-<tr>
-<td>15</td>
-<td>info</td>
-<td><code>[&quot;Tom&quot;,&quot;Jerry&quot;,&quot;Alice&quot;]</code></td>
-</tr>
-</tbody></table>
-<p>前 10 个其实比较简单，<strong>11～15 才是这一关真正要考你的地方。</strong></p>
-<h3 id="任务-A：先分类"><a href="#任务-A：先分类" class="headerlink" title="任务 A：先分类"></a>任务 A：先分类</h3><p>给出：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1 → ?</span><br><span class="line">2 → ?</span><br><span class="line">...</span><br><span class="line">15 → ?</span><br></pre></td></tr></table></figure>
-
-<p>但是 <strong>11～15 必须解释为什么</strong>。</p>
-<h3 id="任务-B：定义最容易混淆的三个-Category"><a href="#任务-B：定义最容易混淆的三个-Category" class="headerlink" title="任务 B：定义最容易混淆的三个 Category"></a>任务 B：定义最容易混淆的三个 Category</h3><p>不要 11 个全定义。只定义：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER</span><br><span class="line">NUMBER</span><br><span class="line">TEXT</span><br></pre></td></tr></table></figure>
-
-<p>每一个按照：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Definition:</span><br><span class="line">Positive Evidence:</span><br><span class="line">Negative Evidence:</span><br><span class="line">Confusable Categories:</span><br><span class="line">Boundary Rule:</span><br><span class="line">Examples:</span><br></pre></td></tr></table></figure>
-
-<p>来写。</p>
-<h3 id="任务-C：解决一个非常重要的问题"><a href="#任务-C：解决一个非常重要的问题" class="headerlink" title="任务 C：解决一个非常重要的问题"></a>任务 C：解决一个非常重要的问题</h3><p>假设：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column_name = number</span><br><span class="line">sample_values = [&quot;20260901&quot;,&quot;20260902&quot;,&quot;20260903&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>你认为应该：</p>
-<p><strong>A. NUMBER</strong><br><strong>B. IDENTIFIER</strong><br><strong>C. DATE</strong><br><strong>D. UNKNOWN</strong></p>
-<p>不要只选答案。请告诉我：</p>
-<blockquote>
-<p><strong>在一个生产级字段分类系统中，为什么应该这样处理？还缺少什么证据才能进一步确定？</strong></p>
-</blockquote>
-<p>这一题非常重要，因为它会测试你有没有真正理解：</p>
-<blockquote>
-<p><strong>UNKNOWN 不是模型失败，而可能是分类系统正确处理“不确定性”的结果。</strong></p>
-</blockquote>
-<p>你直接回答 <strong>A、B、C 三个任务</strong>。我会先不给标准答案，而是从 <strong>互斥性、完备性、可操作性、边界定义、不确定性处理</strong> 五个维度给你批改。</p>
-<h2 id="answer"><a href="#answer" class="headerlink" title="answer"></a>answer</h2><h3 id="任务A"><a href="#任务A" class="headerlink" title="任务A"></a>任务A</h3><p>1 -&gt; IDENTIFIER<br>2 -&gt; NUMBER<br>3 -&gt; PERSON_NAME<br>4 -&gt; PHONE<br>5 -&gt; EMAIL<br>DATE<br>DATETIME<br>ADDRESS<br>BOOLEAN<br>NUMBER<br>11 IDENTIFIER, 因为列名是code是编码的意思，且它的值看起来不是任意值，而是有限的枚举<br>12 TEXT, 列名就是文本的含义，而且内容比较自由，没有限制<br>13 IDENTIFIER,虽然列名value是任意值，但是它的值不是普通的数字，而是3位的编码<br>14 DATE，虽然列名是数字，但是实际上是日期<br>15 TEXT, 列名是info，虽然sample是人名，但是可能只是巧合，不应该限定所有info都是名字</p>
-<h3 id="任务B"><a href="#任务B" class="headerlink" title="任务B"></a>任务B</h3><p>IDENTIFIER<br>Definition: 代表某个对象的唯一编号<br>Positive Evidence: 长度一致，数值接近，名字包含code，id等<br>Negative Evidence: 长度相差很大，数值不接近<br>Confusable Categories: 数字<br>Boundary Rule: 如果是不连续的变化很大的数字就不是IDENTIFIER<br>Examples:</p>
-<p>输入：<br>name：id<br>samples：[1,2,3]<br>输出：yes</p>
-<p>输入<br>name：value<br>samples：[1,2,3]<br>输出：No</p>
-<p>输入：<br>name：id<br>samples：[12,8765,987123]<br>输出：no</p>
-<p>NUMBER<br>Definition: 表述一个数字<br>Positive Evidence: 列名是数量的名词，数值变化范围很大，不整齐<br>Negative Evidence: 列名不是数量，数值是字符串，或者整齐，变化范围有限<br>Confusable Categories: 电话号码，ID<br>Boundary Rule: 如果是11位且以139等常用的手机号开始则是手机号；如果是有限范围则是ID<br>Examples:<br>输入：<br>name：人数<br>samples:[100,30,80]<br>输出：true</p>
-<p>输入：<br>name：电话<br>samples：[13800138000]<br>输出：false</p>
-<p>输入：<br>name：id<br>samples：[1,2,3]<br>输出: false</p>
-<p>TEXT<br>Definition: 形式比较自由的字符串，长度，内容均无明显约束<br>Positive Evidence: 列名是description等，内容没有明显规律，长度不齐<br>Negative Evidence: 内容规范，列名明确表示不是文本<br>Confusable Categories: 人名<br>Boundary Rule: 首先看列名，如果明确表示是人名则是人名；如果列名不是name，则看内容是否自由，自由则是text<br>Examples:<br>输入：<br>name：username<br>samples:[“tom”,”jack”]<br>输出：no</p>
-<p>输入：<br>name：description<br>samples:[“tom”,”jack”]<br>输出：yes</p>
-<p>输入：<br>name：usage<br>samples:[“this is a long story”]<br>输出：yes</p>
-<h3 id="任务C"><a href="#任务C" class="headerlink" title="任务C"></a>任务C</h3><p>选D<br>因为有可能是number<br>不像是ID<br>选择DATE有风险，因为不知道其它数值，而且不知道该列如何使用，如果用于加减运算则是number<br>需要知道该列的取值范围，以及该列的业务含义，是否有其它列依赖它。</p>
-<h2 id="判断"><a href="#判断" class="headerlink" title="判断"></a>判断</h2><p>这次练习很有价值，因为你在<strong>任务 C 上的思路已经比较成熟</strong>，但任务 B 暴露了一个很典型的问题：</p>
-<blockquote>
-<p>你目前还是比较容易用“值的外观&#x2F;统计形态”定义 category，而不是用“字段的语义角色”定义 category。</p>
-</blockquote>
-<p>这正是第一关要解决的问题。我给这次 <strong>78&#x2F;100</strong>。</p>
-<h3 id="任务-A：大部分正确，但-13、14-值得重新判断"><a href="#任务-A：大部分正确，但-13、14-值得重新判断" class="headerlink" title="任务 A：大部分正确，但 13、14 值得重新判断"></a>任务 A：大部分正确，但 13、14 值得重新判断</h3><p>1～10 基本没有问题。</p>
-<p><strong>11 <code>code → IDENTIFIER</code>：结论合理，但理由有一处问题。</strong></p>
-<p>你说：</p>
-<blockquote>
-<p>值看起来不是任意值，而是有限的枚举。</p>
-</blockquote>
-<p><code>A001、A002、A003</code> 并不能说明它是“有限枚举”。如果有：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">A001</span><br><span class="line">A002</span><br><span class="line">...</span><br><span class="line">A999999</span><br></pre></td></tr></table></figure>
-
-<p>它仍然可能是 identifier。</p>
-<p>真正支持 IDENTIFIER 的证据是：</p>
-<blockquote>
-<p><code>code</code> 提供“编码&#x2F;标识”语义，<code>A001/A002/A003</code> 的格式也与编码模式一致。</p>
-</blockquote>
-<p>所以这里是：</p>
-<p><strong>列名提供语义证据 + sample 提供格式证据。</strong></p>
-<hr>
-<p><strong>12 <code>description → TEXT</code>：正确。</strong></p>
-<p>你的理由也比较好。它表达的是自由文本语义，没有明显结构约束。</p>
-<hr>
-<p><strong>13 <code>value + [&quot;001&quot;,&quot;002&quot;,&quot;003&quot;] → IDENTIFIER</code>：我不同意。</strong></p>
-<p>这是这一题非常重要的陷阱。</p>
-<p>你认为：</p>
-<blockquote>
-<p>三位编码 → IDENTIFIER</p>
-</blockquote>
-<p>但这其实是猜测。</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">001</span><br><span class="line">002</span><br><span class="line">003</span><br></pre></td></tr></table></figure>
-
-<p>可能是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">产品ID</span><br><span class="line">排序号</span><br><span class="line">等级</span><br><span class="line">地区代码</span><br><span class="line">月份编号</span><br><span class="line">数量</span><br><span class="line">枚举值</span><br></pre></td></tr></table></figure>
-
-<p>而 <code>value</code> 又完全没有提供语义。</p>
-<p>因此应该：</p>
-<blockquote>
-<p><strong>UNKNOWN</strong></p>
-</blockquote>
-<p>这是你 Taxonomy 思维目前最需要改变的一点：</p>
-<p><strong>格式像 identifier ≠ 语义就是 identifier。</strong></p>
-<hr>
-<p><strong>14 <code>number + [&quot;20260901&quot;...] → DATE</code>：我也不建议直接判 DATE。</strong></p>
-<p>你实际上在任务 C 已经自己纠正了这个答案。</p>
-<p>这非常好。</p>
-<p><code>20260901</code> <strong>符合 YYYYMMDD 的日期格式</strong>，但：</p>
-<blockquote>
-<p><strong>格式符合 DATE ≠ 字段语义就是 DATE。</strong></p>
-</blockquote>
-<p>它也可能是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">batch_number = 20260901</span><br><span class="line">order_number = 20260902</span><br></pre></td></tr></table></figure>
-
-<p>所以仅凭现有证据，我更倾向：</p>
-<blockquote>
-<p><strong>UNKNOWN</strong></p>
-</blockquote>
-<p>但系统可以产生一个候选：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">candidate_categories:</span><br><span class="line">DATE: strong format evidence</span><br><span class="line">NUMBER: weak semantic evidence</span><br><span class="line">IDENTIFIER: possible</span><br></pre></td></tr></table></figure>
-
-<p>然后要求更多证据。</p>
-<hr>
-<p><strong>15 <code>info + [&quot;Tom&quot;,&quot;Jerry&quot;,&quot;Alice&quot;] → TEXT</code>：这里我也更倾向 UNKNOWN。</strong></p>
-<p>你的前半句其实已经判断得很好：</p>
-<blockquote>
-<p>sample 是人名，但是可能只是巧合。</p>
-</blockquote>
-<p>但既然你已经认为证据不足，为什么又马上把它判成 TEXT？</p>
-<p>这是非常重要的一个思维问题：</p>
-<blockquote>
-<p><strong>TEXT 不能成为“我不知道是什么”的垃圾桶。</strong></p>
-</blockquote>
-<p>否则：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>就失去意义了。</p>
-<p><code>TEXT</code> 应该表达明确的<strong>自由文本语义</strong>，例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">description</span><br><span class="line">comment</span><br><span class="line">remark</span><br><span class="line">content</span><br><span class="line">bio</span><br><span class="line">summary</span><br></pre></td></tr></table></figure>
-
-<p>所以：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">description + [&quot;Software engineer&quot;, ...]</span><br><span class="line">→ TEXT</span><br><span class="line"></span><br><span class="line">info + [&quot;Tom&quot;,&quot;Jerry&quot;,&quot;Alice&quot;]</span><br><span class="line">→ UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<hr>
-<h1 id="任务-B：这是这一关最需要加强的部分"><a href="#任务-B：这是这一关最需要加强的部分" class="headerlink" title="任务 B：这是这一关最需要加强的部分"></a>任务 B：这是这一关最需要加强的部分</h1><p>你定义 IDENTIFIER：</p>
-<blockquote>
-<p>代表某个对象的唯一编号</p>
-</blockquote>
-<p>这个定义方向是对的。</p>
-<p>但后面的 Positive Evidence 开始偏了：</p>
-<blockquote>
-<p>长度一致，数值接近</p>
-</blockquote>
-<p>这两个都不是 identifier 的核心证据。</p>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">user_id</span><br><span class="line">[&quot;12&quot;, &quot;8765&quot;, &quot;987123&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>你给出的判断是：</p>
-<blockquote>
-<p>no</p>
-</blockquote>
-<p>实际上完全可能是非常正常的 ID。</p>
-<p>ID：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">12</span><br><span class="line">8765</span><br><span class="line">987123</span><br></pre></td></tr></table></figure>
-
-<p>不需要长度一致，更不需要数值接近。</p>
-<p>反过来：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">temperature</span><br><span class="line">[&quot;20.1&quot;,&quot;20.2&quot;,&quot;20.3&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>长度一致、数值接近，却明显不是 IDENTIFIER。</p>
-<p>所以你要开始区分两个概念：</p>
-<blockquote>
-<p><strong>Semantic Evidence（语义证据）</strong></p>
-<p>与</p>
-<p><strong>Surface Evidence（表面&#x2F;格式证据）</strong></p>
-</blockquote>
-<p>IDENTIFIER 最重要的是前者。</p>
-<p>我会这样修改你的定义：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER</span><br><span class="line"></span><br><span class="line">Definition:</span><br><span class="line">用于标识、引用或区分实体/记录的字段。</span><br><span class="line">其核心作用是 identity，而不是表示数量。</span><br><span class="line"></span><br><span class="line">Positive Evidence:</span><br><span class="line">- 列名具有 id、identifier、code、uuid、key、</span><br><span class="line">  order_no、user_id 等标识语义</span><br><span class="line">- 值具有 UUID、编码、流水号等典型标识结构</span><br><span class="line">- 值具有较高唯一性</span><br><span class="line">- 该字段被其他记录用于引用/关联</span><br><span class="line"></span><br><span class="line">Negative Evidence:</span><br><span class="line">- 表示数量、金额、测量值、年龄等</span><br><span class="line">- 数值主要用于数学计算</span><br><span class="line"></span><br><span class="line">Confusable Categories:</span><br><span class="line">NUMBER</span><br><span class="line"></span><br><span class="line">Boundary Rule:</span><br><span class="line">判断“这个值的业务作用是什么”：</span><br><span class="line">用于回答“这是哪个对象？” → IDENTIFIER</span><br><span class="line">用于回答“有多少/多大/多少钱？” → NUMBER</span><br></pre></td></tr></table></figure>
-
-<p>最后两句话你可以重点记住：</p>
-<blockquote>
-<p><strong>IDENTIFIER 回答 WHICH ONE？</strong><br><strong>NUMBER 回答 HOW MANY &#x2F; HOW MUCH？</strong></p>
-</blockquote>
-<p>这比“连续不连续”“长度一致不一致”稳定得多。</p>
-<hr>
-<h3 id="NUMBER-的问题更明显"><a href="#NUMBER-的问题更明显" class="headerlink" title="NUMBER 的问题更明显"></a>NUMBER 的问题更明显</h3><p>你定义：</p>
-<blockquote>
-<p>表述一个数字</p>
-</blockquote>
-<p>这个定义太宽。</p>
-<p>因为：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">身份证号</span><br><span class="line">电话号码</span><br><span class="line">订单号</span><br><span class="line">邮政编码</span><br><span class="line">日期20260910</span><br></pre></td></tr></table></figure>
-
-<p>都可能“表现为数字”。</p>
-<p>但它们不是 NUMBER。</p>
-<p>更好的定义应该是：</p>
-<blockquote>
-<p><strong>NUMBER 表示具有数量、测量或数学意义的数值。</strong></p>
-</blockquote>
-<p>比如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">age       → 25</span><br><span class="line">price     → 99.5</span><br><span class="line">height    → 178.2</span><br><span class="line">quantity  → 10</span><br><span class="line">score     → 95</span><br><span class="line">salary    → 20000</span><br></pre></td></tr></table></figure>
-
-<p>一个特别实用的测试方法是：</p>
-<blockquote>
-<p><strong>对这个字段做 +、-、平均值、大小比较，是否具有业务意义？</strong></p>
-</blockquote>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">平均工资 → 有意义</span><br><span class="line">平均年龄 → 有意义</span><br><span class="line">平均订单号 → 没意义</span><br><span class="line">平均电话号码 → 没意义</span><br></pre></td></tr></table></figure>
-
-<p>这就是一个很好的 <strong>Operational Test</strong>。</p>
-<hr>
-<h3 id="TEXT：你的定义比前两个好"><a href="#TEXT：你的定义比前两个好" class="headerlink" title="TEXT：你的定义比前两个好"></a>TEXT：你的定义比前两个好</h3><p>你写：</p>
-<blockquote>
-<p>形式比较自由的字符串，长度、内容均无明显约束。</p>
-</blockquote>
-<p>这个已经比较接近。</p>
-<p>但 Boundary Rule：</p>
-<blockquote>
-<p>如果列名不是 name，则看内容是否自由，自由则 text</p>
-</blockquote>
-<p>仍然有点危险。</p>
-<p>因为：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column = info</span><br><span class="line">samples = [&quot;Tom&quot;,&quot;Jerry&quot;,&quot;Alice&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>格式很自由，但它可能是 PERSON_NAME。</p>
-<p>更好的 TEXT 定义应该强调：</p>
-<blockquote>
-<p><strong>字段语义本身就是承载自由文本内容，而不是“暂时识别不出来的字符串”。</strong></p>
-</blockquote>
-<p>于是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">description</span><br><span class="line">comment</span><br><span class="line">remark</span><br><span class="line">summary</span><br><span class="line">content</span><br></pre></td></tr></table></figure>
-
-<p>属于 TEXT。</p>
-<p>而：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">info + Tom/Jerry/Alice</span><br></pre></td></tr></table></figure>
-
-<p>应该 UNKNOWN。</p>
-<hr>
-<h1 id="任务-C：这一题答得最好"><a href="#任务-C：这一题答得最好" class="headerlink" title="任务 C：这一题答得最好"></a>任务 C：这一题答得最好</h1><p>你选择：</p>
-<blockquote>
-<p><strong>D UNKNOWN</strong></p>
-</blockquote>
-<p>而且理由已经开始接近生产系统的思维。</p>
-<p>尤其这句话：</p>
-<blockquote>
-<p>不知道该列如何使用，如果用于加减运算则是 number。</p>
-</blockquote>
-<p>非常好。</p>
-<p>不过“需要什么额外证据”还可以系统化。</p>
-<p>对于：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column_name = number</span><br><span class="line">samples = [&quot;20260901&quot;,&quot;20260902&quot;,&quot;20260903&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>我们实际上拥有冲突证据：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">column_name</span><br><span class="line">    ↓</span><br><span class="line">&quot;number&quot;</span><br><span class="line">    ↓</span><br><span class="line">支持 NUMBER</span><br><span class="line"></span><br><span class="line">sample format</span><br><span class="line">    ↓</span><br><span class="line">YYYYMMDD</span><br><span class="line">    ↓</span><br><span class="line">支持 DATE</span><br><span class="line"></span><br><span class="line">数值递增</span><br><span class="line">    ↓</span><br><span class="line">也可能支持 IDENTIFIER / sequence</span><br></pre></td></tr></table></figure>
-
-<p>因此：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Evidence conflict</span><br><span class="line">        ↓</span><br><span class="line">不要强行分类</span><br><span class="line">        ↓</span><br><span class="line">UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>然后继续获取证据：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">更多 sample</span><br><span class="line">字段统计信息</span><br><span class="line">取值范围</span><br><span class="line">业务描述</span><br><span class="line">相邻字段</span><br><span class="line">表名</span><br><span class="line">数据来源</span><br><span class="line">是否参与数学计算</span><br><span class="line">是否具有唯一性</span><br><span class="line">是否能全部通过日期合法性验证</span><br></pre></td></tr></table></figure>
-
-<p>例如多拿几个值发现：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">20260228</span><br><span class="line">20260301</span><br><span class="line">20260302</span><br></pre></td></tr></table></figure>
-
-<p>全部都是合法日期，DATE 的概率明显提高。</p>
-<p>如果发现：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">20269999</span><br><span class="line">20270001</span><br></pre></td></tr></table></figure>
-
-<p>DATE 基本可以排除。</p>
-<hr>
-<h1 id="这一关真正需要你掌握的东西"><a href="#这一关真正需要你掌握的东西" class="headerlink" title="这一关真正需要你掌握的东西"></a>这一关真正需要你掌握的东西</h1><p>你现在已经发现一个很关键的规律了。</p>
-<p>字段分类不能简单写成：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">value 长什么样</span><br><span class="line">        ↓</span><br><span class="line">category</span><br></pre></td></tr></table></figure>
-
-<p>应该是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">             Column Name</span><br><span class="line">                  │</span><br><span class="line">                  │ 语义证据</span><br><span class="line">                  ▼</span><br><span class="line">Samples ─────→ Field Meaning ←──── Context</span><br><span class="line">  │               │</span><br><span class="line">  │ 格式证据       │</span><br><span class="line">  │               ▼</span><br><span class="line">Statistics ──→ Semantic Role</span><br><span class="line">                  │</span><br><span class="line">                  ▼</span><br><span class="line">              Category</span><br></pre></td></tr></table></figure>
-
-<p>所以第一关我希望你最终形成一句自己的判断原则：</p>
-<blockquote>
-<p><strong>Category 应该主要根据字段表达的语义角色定义；格式、长度、正则、唯一率等主要作为支持或反驳语义判断的证据，而不是 category 本身的定义。</strong></p>
-</blockquote>
-<p>当然也有例外，比如 EMAIL&#x2F;PHONE 本身具有很强的结构特征，但即便如此，也不能只靠一个 regex 就解决所有语义问题。</p>
-<hr>
-<h2 id="第一关·第二轮：只做一道题"><a href="#第一关·第二轮：只做一道题" class="headerlink" title="第一关·第二轮：只做一道题"></a>第一关·第二轮：只做一道题</h2><p>先不进入第二关。我觉得你值得再练一次。</p>
-<p>现在只有三个 category：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER</span><br><span class="line">NUMBER</span><br><span class="line">DATE</span><br><span class="line">UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>给你：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">column_name: batch</span><br><span class="line">samples:</span><br><span class="line">[</span><br><span class="line">  &quot;20260101&quot;,</span><br><span class="line">  &quot;20260102&quot;,</span><br><span class="line">  &quot;20260103&quot;,</span><br><span class="line">  &quot;20260104&quot;,</span><br><span class="line">  &quot;20260105&quot;</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">statistics:</span><br><span class="line">row_count: 1,000,000</span><br><span class="line">distinct_count: 365</span><br><span class="line">min: &quot;20260101&quot;</span><br><span class="line">max: &quot;20261231&quot;</span><br><span class="line">all_values_match_YYYYMMDD: true</span><br><span class="line">all_values_are_valid_dates: true</span><br></pre></td></tr></table></figure>
-
-<p>请不要直接给 category。</p>
-<p>你按照下面四步回答：</p>
-<p><strong>① 有哪些证据支持 DATE？<br>② 有哪些证据支持 IDENTIFIER？<br>③ 有哪些证据支持 NUMBER？<br>④ 最终选择什么 category，为什么？</strong></p>
-<p>这一轮如果你的判断逻辑过关，我们就结束 Taxonomy 第一关，进入真正更有意思的 <strong>第二关：Decision Boundary——如何把这种判断过程变成稳定、可执行的决策规则。</strong></p>
-<h2 id="补充回答"><a href="#补充回答" class="headerlink" title="补充回答"></a>补充回答</h2><p>支持DATE：</p>
-<ol>
-<li>有重复</li>
-<li>都是有效日期</li>
-<li>格式统一</li>
-<li>样例都是日期</li>
-</ol>
-<p>支持ID：</p>
-<ol>
-<li>列名像ID</li>
-<li>min 和max是有限边界</li>
-</ol>
-<p>支持number：</p>
-<ol>
-<li>样本值是数字</li>
-</ol>
-<p>最终选择DATE，因为支持证据最多。</p>
-<h2 id="判断-1"><a href="#判断-1" class="headerlink" title="判断"></a>判断</h2><p>结论 <strong>DATE 是合理的</strong>，但你的理由“<strong>因为支持证据最多</strong>”需要修正。第一关最重要的一点就在这里：</p>
-<blockquote>
-<p><strong>分类不是数票，而是比较证据的“区分度”和“语义强度”。</strong></p>
-</blockquote>
-<p>例如 10 个弱证据，不一定比 1 个强证据更可靠。</p>
-<p>逐项看你的判断。</p>
-<p><strong>DATE：方向正确，但证据强弱要重新排。</strong> “有重复”对 DATE 的支持其实很弱，很多字段都会重复；“格式统一”也只是弱证据，因为 ID 同样可以格式统一。真正非常强的是：<strong>100 万行全部符合 YYYYMMDD，并且全部是合法日期，取值范围恰好覆盖 2026-01-01 到 2026-12-31，distinct&#x3D;365。</strong> 这些证据组合起来形成了非常明显的“自然年日期集合”语义。</p>
-<p><strong>IDENTIFIER：你列的两个证据都不太成立。</strong> <code>batch</code> 不是 ID，它只是“批次”，可能是批次编号，也可能直接用日期表示生产批次；<code>min/max 有有限边界</code> 也不是 identifier 的特征。真正支持 IDENTIFIER 的证据只能说：<strong>batch 在业务上可能承担“区分批次”的标识作用</strong>。比如很多系统确实会用 <code>20260101</code> 作为 batch code。所以它是一个合理候选，但证据来自业务语义，而不是数值形态。</p>
-<p><strong>NUMBER：你说“样本是数字”只能算非常弱的证据。</strong> 这正是上一轮 NUMBER 定义的问题。电话号码、邮编、身份证、日期、订单号都可以全是数字。要支持 NUMBER，应该看到诸如 <code>quantity / price / weight / score</code> 这样的数量语义，或者确认求和、平均值等数学操作具有业务意义。这里几乎没有这样的证据。</p>
-<p>所以我会把证据强度写成：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">DATE</span><br><span class="line">★★★★★ 100% 可解析为合法 YYYYMMDD 日期</span><br><span class="line">★★★★★ 取值恰好落在一个自然年</span><br><span class="line">★★★★☆ distinct = 365</span><br><span class="line">★★★☆☆ 样本表现为连续日期</span><br><span class="line"></span><br><span class="line">IDENTIFIER</span><br><span class="line">★★☆☆☆ batch 可能使用日期编码作为批次标识</span><br><span class="line"></span><br><span class="line">NUMBER</span><br><span class="line">★☆☆☆☆ 底层字符全部是数字</span><br></pre></td></tr></table></figure>
-
-<p>最终我也选择 <strong>DATE</strong>，但理由应该是：</p>
-<blockquote>
-<p><strong>不是因为 DATE 的证据“数量最多”，而是因为 DATE 获得了多个高区分度、彼此一致的强证据，同时竞争类别只有弱证据。</strong></p>
-</blockquote>
-<p>这里还藏着一个很有意思的问题。假如我只修改一个条件：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">column_name: batch_id</span><br><span class="line"></span><br><span class="line">samples:</span><br><span class="line">[&quot;20260101&quot;, &quot;20260102&quot;, ...]</span><br><span class="line"></span><br><span class="line">statistics:</span><br><span class="line">100% valid YYYYMMDD</span><br><span class="line">distinct_count: 365</span><br></pre></td></tr></table></figure>
-
-<p>这时就困难了。</p>
-<p><strong>格式语义强烈支持 DATE，但字段语义强烈支持 IDENTIFIER。</strong></p>
-<p>甚至真实业务可能就是：</p>
-<blockquote>
-<p>公司用日期作为 <code>batch_id</code>。</p>
-</blockquote>
-<p>所以这里会涉及下一关的核心内容：</p>
-<p><strong>“数据长得像什么”与“字段实际上是什么”发生冲突时，谁优先？</strong></p>
-<hr>
-<h3 id="第一关可以通过了"><a href="#第一关可以通过了" class="headerlink" title="第一关可以通过了"></a>第一关可以通过了</h3><p>你已经掌握了最重要的主干思想，但有一个习惯需要继续纠正：</p>
-<p>以前容易：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">三位数字很整齐</span><br><span class="line">→ 像编码</span><br><span class="line">→ IDENTIFIER</span><br></pre></td></tr></table></figure>
-
-<p>现在应该变成：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">字段语义是什么？</span><br><span class="line">      ↓</span><br><span class="line">有哪些候选 Category？</span><br><span class="line">      ↓</span><br><span class="line">每项证据分别支持/反驳谁？</span><br><span class="line">      ↓</span><br><span class="line">证据的区分度有多强？</span><br><span class="line">      ↓</span><br><span class="line">证据是否冲突？</span><br><span class="line">      ↓</span><br><span class="line">足够确定 → Category</span><br><span class="line">证据不足/冲突严重 → UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>尤其记住三个原则：</p>
-<blockquote>
-<p><strong>① Semantic role &gt; surface appearance</strong><br><strong>② Evidence 要看强度，不要看数量</strong><br><strong>③ UNKNOWN 是一种正确结果，不是分类失败</strong></p>
-</blockquote>
-<p>接下来第二关 <strong>Decision Boundary</strong> 会比第一关更接近真正的 Prompt Engineering：我们会把刚才这种“凭经验权衡证据”，逐步变成<strong>模型可以稳定执行的决策规则</strong>。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/10/day2/" data-id="cuidWtc9uKL3e92G58hPi7loM" data-title="Day2 - Taxonomy 第一关练习" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li></ul>
-
     </footer>
   </div>
   
@@ -2362,7 +2341,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
     </div>
   </div>
 
@@ -2372,7 +2351,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a>
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
     </div>
   </div>
 
@@ -2394,7 +2373,11 @@
       <ul>
         
           <li>
-            <a href="/2026/09/14/day5-agent%20loop/">(no title)</a>
+            <a href="/2026/09/16/day7-agent-design/">Day7 - Agent Design</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/16/day7-agent-scope/">Day7 - Agent Scope</a>
           </li>
         
           <li>
@@ -2407,10 +2390,6 @@
         
           <li>
             <a href="/2026/09/13/day4-lession%202/">Day4 - 第 2 课：Agent 八个核心部件如何协作</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/13/day4%20prompt%20vs%20skill/">Day4 - Prompt vs Skill</a>
           </li>
         
       </ul>
