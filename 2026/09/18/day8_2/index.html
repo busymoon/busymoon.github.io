@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>从 Crawl4AI 理解 Agent：从抓取结果到动态规划 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="从 Crawl4AI 理解 Agent：从抓取结果到动态规划一、起点：Crawl4AI 已经能抓网页了，为什么还需要 Agent？假设我们的目标很简单：  给定一个新闻 URL，获取标题、作者、发布时间和正文。  Crawl4AI 已经可以作为一个工具完成网页抓取： 1result &#x3D; await crawler.arun(url)  如果所有网站都能够稳定返回正确内容，那么整个系统其实不需要 A">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从 Crawl4AI 理解 Agent：从抓取结果到动态规划">
+<meta property="og:url" content="https://busymoon.github.io/2026/09/18/day8_2/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="从 Crawl4AI 理解 Agent：从抓取结果到动态规划一、起点：Crawl4AI 已经能抓网页了，为什么还需要 Agent？假设我们的目标很简单：  给定一个新闻 URL，获取标题、作者、发布时间和正文。  Crawl4AI 已经可以作为一个工具完成网页抓取： 1result &#x3D; await crawler.arun(url)  如果所有网站都能够稳定返回正确内容，那么整个系统其实不需要 A">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-18T14:35:25.000Z">
+<meta property="article:modified_time" content="2026-09-18T14:37:50.672Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Crawl4AI">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://busymoon.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-day8_2" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/18/day8_2/" class="article-date">
+  <time class="dt-published" datetime="2026-09-18T14:35:25.000Z" itemprop="datePublished">2026-09-18</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      从 Crawl4AI 理解 Agent：从抓取结果到动态规划
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="从-Crawl4AI-理解-Agent：从抓取结果到动态规划"><a href="#从-Crawl4AI-理解-Agent：从抓取结果到动态规划" class="headerlink" title="从 Crawl4AI 理解 Agent：从抓取结果到动态规划"></a>从 Crawl4AI 理解 Agent：从抓取结果到动态规划</h1><h2 id="一、起点：Crawl4AI-已经能抓网页了，为什么还需要-Agent？"><a href="#一、起点：Crawl4AI-已经能抓网页了，为什么还需要-Agent？" class="headerlink" title="一、起点：Crawl4AI 已经能抓网页了，为什么还需要 Agent？"></a>一、起点：Crawl4AI 已经能抓网页了，为什么还需要 Agent？</h2><p>假设我们的目标很简单：</p>
+<blockquote>
+<p>给定一个新闻 URL，获取标题、作者、发布时间和正文。</p>
+</blockquote>
+<p>Crawl4AI 已经可以作为一个工具完成网页抓取：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">result = <span class="keyword">await</span> crawler.arun(url)</span><br></pre></td></tr></table></figure>
+
+<p>如果所有网站都能够稳定返回正确内容，那么整个系统其实不需要 Agent：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">URL</span><br><span class="line"> ↓</span><br><span class="line">Crawl4AI</span><br><span class="line"> ↓</span><br><span class="line">HTML / Markdown</span><br><span class="line"> ↓</span><br><span class="line">正文提取</span><br><span class="line"> ↓</span><br><span class="line">结构化结果</span><br></pre></td></tr></table></figure>
+
+<p>真正的问题在于现实环境是不确定的。</p>
+<p>同一个 <code>crawl()</code> 操作可能返回：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">200 + 正常新闻</span><br><span class="line">403</span><br><span class="line">429</span><br><span class="line">Timeout</span><br><span class="line">200 + 验证页面</span><br><span class="line">200 + 登录页面</span><br><span class="line">200 + 正常HTML但没有正文</span><br><span class="line">200 + 正文提取错误</span><br></pre></td></tr></table></figure>
+
+<p>因此问题从：</p>
+<blockquote>
+<p>“怎么抓网页？”</p>
+</blockquote>
+<p>升级成：</p>
+<blockquote>
+<p>“抓取以后，我怎么知道成功还是失败？如果失败，下一步应该怎么办？”</p>
+</blockquote>
+<p>这正是 Agent 开始产生价值的地方。</p>
+<hr>
+<h1 id="二、第一个问题：Tool-Result-怎么变成-Agent-能理解的信息？"><a href="#二、第一个问题：Tool-Result-怎么变成-Agent-能理解的信息？" class="headerlink" title="二、第一个问题：Tool Result 怎么变成 Agent 能理解的信息？"></a>二、第一个问题：Tool Result 怎么变成 Agent 能理解的信息？</h1><p>Crawl4AI 可能返回：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">result = &#123;</span><br><span class="line">    <span class="string">&quot;status_code&quot;</span>: <span class="number">200</span>,</span><br><span class="line">    <span class="string">&quot;html_length&quot;</span>: <span class="number">53000</span>,</span><br><span class="line">    <span class="string">&quot;markdown_length&quot;</span>: <span class="number">1200</span>,</span><br><span class="line">    <span class="string">&quot;title&quot;</span>: <span class="string">&quot;BBC - Breaking News&quot;</span>,</span><br><span class="line">    <span class="string">&quot;article_text&quot;</span>: <span class="string">&quot;&quot;</span>,</span><br><span class="line">    <span class="string">&quot;captcha&quot;</span>: <span class="literal">False</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是 <strong>Tool Result</strong>。</p>
+<p>但是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HTTP 200</span><br></pre></td></tr></table></figure>
+
+<p>并不意味着：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">新闻正文获取成功</span><br></pre></td></tr></table></figure>
+
+<p>Agent 真正需要知道的是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">页面是否加载成功？</span><br><span class="line">是不是验证码页面？</span><br><span class="line">是不是登录页面？</span><br><span class="line">有没有找到正文？</span><br><span class="line">正文质量是否合格？</span><br></pre></td></tr></table></figure>
+
+<p>因此引入：</p>
+<h2 id="Observer"><a href="#Observer" class="headerlink" title="Observer"></a>Observer</h2><p>Observer 负责回答：</p>
+<blockquote>
+<p><strong>刚才发生了什么？</strong></p>
+</blockquote>
+<p>它把原始 Tool Result 转换成 Agent 可以理解的 Observation：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">observation = &#123;</span><br><span class="line">    <span class="string">&quot;http_success&quot;</span>: <span class="literal">True</span>,</span><br><span class="line">    <span class="string">&quot;page_loaded&quot;</span>: <span class="literal">True</span>,</span><br><span class="line">    <span class="string">&quot;article_found&quot;</span>: <span class="literal">False</span>,</span><br><span class="line">    <span class="string">&quot;captcha_detected&quot;</span>: <span class="literal">False</span>,</span><br><span class="line">    <span class="string">&quot;result_quality&quot;</span>: <span class="string">&quot;FAILED&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Tool</span><br><span class="line"> ↓</span><br><span class="line">Tool Result</span><br><span class="line"> ↓</span><br><span class="line">Observer</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br></pre></td></tr></table></figure>
+
+<p>这里形成了第一个重要认识：</p>
+<blockquote>
+<p><strong>Tool Result ≠ Observation。</strong></p>
+</blockquote>
+<p>Tool Result 是工具返回的原始数据。</p>
+<p>Observation 是 Agent 对这个结果的解释。</p>
+<hr>
+<h1 id="三、新问题：Observer-怎么判断？"><a href="#三、新问题：Observer-怎么判断？" class="headerlink" title="三、新问题：Observer 怎么判断？"></a>三、新问题：Observer 怎么判断？</h1><p>有些判断非常确定。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP 429 → RATE_LIMIT</span><br><span class="line">HTTP 401 → AUTH_REQUIRED</span><br><span class="line">Timeout  → TIMEOUT</span><br></pre></td></tr></table></figure>
+
+<p>这种情况没有必要调用 LLM。</p>
+<p>直接使用代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> status_code == <span class="number">429</span>:</span><br><span class="line">    failure_type = <span class="string">&quot;RATE_LIMIT&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>但是有些页面：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">title</span>&gt;</span>Checking your browser...<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"></span><br><span class="line">Please wait while we verify your browser.</span><br></pre></td></tr></table></figure>
+
+<p>HTTP 状态码却是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">200</span><br></pre></td></tr></table></figure>
+
+<p>单纯依靠状态码很难判断。</p>
+<p>这时候可以让 LLM 判断：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">这是正常新闻页面，</span><br><span class="line">还是 BOT_CHALLENGE / LOGIN_REQUIRED / EMPTY_CONTENT？</span><br></pre></td></tr></table></figure>
+
+<p>因此 Observer 可以设计成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">           Observer</span><br><span class="line">              │</span><br><span class="line">    ┌─────────┴─────────┐</span><br><span class="line">    ↓                   ↓</span><br><span class="line">  Rules                LLM</span><br><span class="line">确定判断              语义判断</span><br><span class="line">    │                   │</span><br><span class="line">    └─────────┬─────────┘</span><br><span class="line">              ↓</span><br><span class="line">         Observation</span><br></pre></td></tr></table></figure>
+
+<p>于是得到一个重要工程原则：</p>
+<blockquote>
+<p><strong>确定性问题优先交给 Code，不确定的语义判断再交给 LLM。</strong></p>
+</blockquote>
+<p>LLM 并不等于 Agent。</p>
+<p>LLM 只是 Agent 在某些环节使用的一种推理能力。</p>
+<hr>
+<h1 id="四、新问题：Observation-是不是-State？"><a href="#四、新问题：Observation-是不是-State？" class="headerlink" title="四、新问题：Observation 是不是 State？"></a>四、新问题：Observation 是不是 State？</h1><p>不是。</p>
+<p>例如 Observer 得到：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">observation = &#123;</span><br><span class="line">    <span class="string">&quot;page_loaded&quot;</span>: <span class="literal">True</span>,</span><br><span class="line">    <span class="string">&quot;article_found&quot;</span>: <span class="literal">False</span>,</span><br><span class="line">    <span class="string">&quot;failure_type&quot;</span>: <span class="string">&quot;ARTICLE_NOT_FOUND&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>它描述的是：</p>
+<blockquote>
+<p><strong>这一次执行发生了什么。</strong></p>
+</blockquote>
+<p>而 State 可能是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">state = &#123;</span><br><span class="line">    <span class="string">&quot;url&quot;</span>: <span class="string">&quot;...&quot;</span>,</span><br><span class="line">    <span class="string">&quot;attempt&quot;</span>: <span class="number">3</span>,</span><br><span class="line">    <span class="string">&quot;current_strategy&quot;</span>: <span class="string">&quot;browser&quot;</span>,</span><br><span class="line">    <span class="string">&quot;last_failure&quot;</span>: <span class="string">&quot;ARTICLE_NOT_FOUND&quot;</span>,</span><br><span class="line">    <span class="string">&quot;failure_history&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;TIMEOUT&quot;</span>,</span><br><span class="line">        <span class="string">&quot;BOT_CHALLENGE&quot;</span>,</span><br><span class="line">        <span class="string">&quot;ARTICLE_NOT_FOUND&quot;</span></span><br><span class="line">    ],</span><br><span class="line">    <span class="string">&quot;used_strategies&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;http&quot;</span>,</span><br><span class="line">        <span class="string">&quot;browser&quot;</span></span><br><span class="line">    ],</span><br><span class="line">    <span class="string">&quot;status&quot;</span>: <span class="string">&quot;RUNNING&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>State 描述的是：</p>
+<blockquote>
+<p><strong>Agent 当前整体处于什么状态。</strong></p>
+</blockquote>
+<p>所以：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Tool Result</span><br><span class="line"> ↓</span><br><span class="line">Observer</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> ↓</span><br><span class="line">State Update</span><br><span class="line"> ↓</span><br><span class="line">State</span><br></pre></td></tr></table></figure>
+
+<p>可以这样区分：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Observation：</span><br><span class="line">刚才发生了什么？</span><br><span class="line"></span><br><span class="line">State：</span><br><span class="line">综合到目前为止发生的一切，</span><br><span class="line">我现在处于什么状态？</span><br></pre></td></tr></table></figure>
+
+<p>因此 State 不只是保存变量。</p>
+<p>它更深层的作用是：</p>
+<blockquote>
+<p><strong>Agent 对当前世界的内部表示。</strong></p>
+</blockquote>
+<p>后面的 Decision 和 Planning 都建立在 State 之上。</p>
+<hr>
+<h1 id="五、新问题：知道发生了什么以后，下一步怎么办？"><a href="#五、新问题：知道发生了什么以后，下一步怎么办？" class="headerlink" title="五、新问题：知道发生了什么以后，下一步怎么办？"></a>五、新问题：知道发生了什么以后，下一步怎么办？</h1><p>这就是 <strong>Decision</strong>。</p>
+<p>Observer 回答：</p>
+<blockquote>
+<p>What happened?</p>
+</blockquote>
+<p>Decision 回答：</p>
+<blockquote>
+<p>What should I do next?</p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Observation：</span><br><span class="line"></span><br><span class="line">页面加载成功</span><br><span class="line">没有验证码</span><br><span class="line">没有找到正文</span><br></pre></td></tr></table></figure>
+
+<p>经过 State Update：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">attempt = 2</span><br><span class="line">strategy = browser</span><br><span class="line">failure = ARTICLE_NOT_FOUND</span><br></pre></td></tr></table></figure>
+
+<p>Decision 要决定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">retry？</span><br><span class="line">换提取策略？</span><br><span class="line">repair_xpath？</span><br><span class="line">stop？</span><br></pre></td></tr></table></figure>
+
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Observation</span><br><span class="line"> ↓</span><br><span class="line">State Update</span><br><span class="line"> ↓</span><br><span class="line">State</span><br><span class="line"> ↓</span><br><span class="line">Decision</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br></pre></td></tr></table></figure>
+
+<p>这里要特别区分：</p>
+<blockquote>
+<p><strong>Observer 判断“发生了什么”，Decision 判断“下一步做什么”。</strong></p>
+</blockquote>
+<hr>
+<h1 id="六、新问题：能不能让-LLM-随便决定下一步？"><a href="#六、新问题：能不能让-LLM-随便决定下一步？" class="headerlink" title="六、新问题：能不能让 LLM 随便决定下一步？"></a>六、新问题：能不能让 LLM 随便决定下一步？</h1><p>如果直接问 LLM：</p>
+<blockquote>
+<p>抓取失败了，下一步怎么办？</p>
+</blockquote>
+<p>LLM 可能回答：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">使用 Selenium</span><br><span class="line">换代理</span><br><span class="line">搜索 Google Cache</span><br><span class="line">使用某个外部 API</span><br></pre></td></tr></table></figure>
+
+<p>但系统可能根本没有这些能力。</p>
+<p>因此 Agent 不能让 LLM 无限自由地产生动作。</p>
+<p>需要定义：</p>
+<h2 id="Action-Space"><a href="#Action-Space" class="headerlink" title="Action Space"></a>Action Space</h2><p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">CRAWL</span><br><span class="line">RETRY</span><br><span class="line">CHANGE_STRATEGY</span><br><span class="line">EXTRACT_ARTICLE</span><br><span class="line">ANALYZE_PAGE</span><br><span class="line">REPAIR_XPATH</span><br><span class="line">STOP</span><br></pre></td></tr></table></figure>
+
+<p>LLM 的任务从：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">想一个解决办法</span><br></pre></td></tr></table></figure>
+
+<p>变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">从允许的 Actions 中选择一个</span><br></pre></td></tr></table></figure>
+
+<p>即：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Available Actions</span><br><span class="line">        ↓</span><br><span class="line">     Decision</span><br><span class="line">        ↓</span><br><span class="line"> Selected Action</span><br></pre></td></tr></table></figure>
+
+<p>这时 LLM 更准确的角色是：</p>
+<blockquote>
+<p><strong>Action Selector。</strong></p>
+</blockquote>
+<hr>
+<h1 id="七、新问题：所有-Action-在任何时候都能执行吗？"><a href="#七、新问题：所有-Action-在任何时候都能执行吗？" class="headerlink" title="七、新问题：所有 Action 在任何时候都能执行吗？"></a>七、新问题：所有 Action 在任何时候都能执行吗？</h1><p>不能。</p>
+<p>例如 Agent 还没有抓页面：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">State = INIT</span><br></pre></td></tr></table></figure>
+
+<p>这时候执行：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">REPAIR_XPATH</span><br></pre></td></tr></table></figure>
+
+<p>显然没有意义。</p>
+<p>因此需要根据 State 对 Action Space 进行过滤。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">INIT</span><br><span class="line"> ↓</span><br><span class="line">Available Actions:</span><br><span class="line">CRAWL</span><br><span class="line">STOP</span><br></pre></td></tr></table></figure>
+
+<p>抓取失败：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">CRAWL_FAILED</span><br><span class="line"> ↓</span><br><span class="line">Available Actions:</span><br><span class="line">RETRY</span><br><span class="line">CHANGE_STRATEGY</span><br><span class="line">STOP</span><br></pre></td></tr></table></figure>
+
+<p>页面成功但正文失败：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">CONTENT_INVALID</span><br><span class="line"> ↓</span><br><span class="line">Available Actions:</span><br><span class="line">CHANGE_EXTRACTION_STRATEGY</span><br><span class="line">REPAIR_XPATH</span><br><span class="line">STOP</span><br></pre></td></tr></table></figure>
+
+<p>因此：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Action Space</span><br><span class="line">     ↓</span><br><span class="line">State Constraints</span><br><span class="line">     ↓</span><br><span class="line">Available Actions</span><br></pre></td></tr></table></figure>
+
+<p>这时候 Agent 已经开始表现得很像一个动态状态机。</p>
+<hr>
+<h1 id="八、新问题：有些动作虽然理论上能做，但业务上不允许怎么办？"><a href="#八、新问题：有些动作虽然理论上能做，但业务上不允许怎么办？" class="headerlink" title="八、新问题：有些动作虽然理论上能做，但业务上不允许怎么办？"></a>八、新问题：有些动作虽然理论上能做，但业务上不允许怎么办？</h1><p>这就引入了：</p>
+<h2 id="Policy"><a href="#Policy" class="headerlink" title="Policy"></a>Policy</h2><p>例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">policy = &#123;</span><br><span class="line">    <span class="string">&quot;max_retry&quot;</span>: <span class="number">3</span>,</span><br><span class="line">    <span class="string">&quot;allow_browser&quot;</span>: <span class="literal">True</span>,</span><br><span class="line">    <span class="string">&quot;allow_proxy&quot;</span>: <span class="literal">False</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当前：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">attempt = 3</span><br></pre></td></tr></table></figure>
+
+<p>虽然 Action Space 中存在：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RETRY</span><br></pre></td></tr></table></figure>
+
+<p>但 Policy：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">max_retry = 3</span><br></pre></td></tr></table></figure>
+
+<p>因此必须把 RETRY 删除。</p>
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Action Space</span><br><span class="line">     ↓</span><br><span class="line">State Constraints</span><br><span class="line">     ↓</span><br><span class="line">Policy Constraints</span><br><span class="line">     ↓</span><br><span class="line">Available Actions</span><br><span class="line">     ↓</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
+
+<p>Policy 的作用是：</p>
+<blockquote>
+<p><strong>约束 Agent 可以采取什么行为。</strong></p>
+</blockquote>
+<p>而且 Policy 并不一定是 Agent Loop 中一个固定位置的模块。</p>
+<p>Observer 可以有 Observer Rules；</p>
+<p>Decision 可以有 Decision Rules；</p>
+<p>Action 执行前也可以有 Action Policy。</p>
+<p>因此 Policy 更像一种：</p>
+<blockquote>
+<p><strong>横跨多个 Agent 阶段的约束机制。</strong></p>
+</blockquote>
+<hr>
+<h1 id="九、新问题：Action-和-Tool-是不是一回事？"><a href="#九、新问题：Action-和-Tool-是不是一回事？" class="headerlink" title="九、新问题：Action 和 Tool 是不是一回事？"></a>九、新问题：Action 和 Tool 是不是一回事？</h1><p>不是。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">CHANGE_STRATEGY(browser)</span><br></pre></td></tr></table></figure>
+
+<p>它可能只是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">state.strategy = <span class="string">&quot;browser&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>并没有调用任何外部工具。</p>
+<p>而：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">CRAWL</span><br></pre></td></tr></table></figure>
+
+<p>可能最终调用：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">crawler.arun(...)</span><br></pre></td></tr></table></figure>
+
+<p>因此需要一个：</p>
+<h2 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h2><p>关系变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Decision</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Executor</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br><span class="line"> ↓</span><br><span class="line">Tool Result</span><br></pre></td></tr></table></figure>
+
+<p>Executor 根据 Action 决定具体如何执行。</p>
+<p>所以：</p>
+<blockquote>
+<p><strong>Action 表示“我要做什么”。</strong></p>
+</blockquote>
+<p>而：</p>
+<blockquote>
+<p><strong>Tool 表示“具体使用什么能力去做”。</strong></p>
+</blockquote>
+<p>Crawl4AI 在这个系统中首先是一个 Tool，而不是 Agent。</p>
+<hr>
+<h1 id="十、新问题：Tool-和-Skill-又是什么关系？"><a href="#十、新问题：Tool-和-Skill-又是什么关系？" class="headerlink" title="十、新问题：Tool 和 Skill 又是什么关系？"></a>十、新问题：Tool 和 Skill 又是什么关系？</h1><p>假设系统有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">crawl_page()</span><br><span class="line">extract_html()</span><br><span class="line">detect_captcha()</span><br><span class="line">browser_crawl()</span><br></pre></td></tr></table></figure>
+
+<p>这些比较接近 Tool。</p>
+<p>但：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CrawlArticleSkill</span><br></pre></td></tr></table></figure>
+
+<p>可能包含：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">crawl_page</span><br><span class="line"> ↓</span><br><span class="line">observe_result</span><br><span class="line"> ↓</span><br><span class="line">必要时 browser_crawl</span><br><span class="line"> ↓</span><br><span class="line">extract_article</span><br><span class="line"> ↓</span><br><span class="line">validate_article</span><br></pre></td></tr></table></figure>
+
+<p>因此可以理解为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Tool</span><br><span class="line">≈ function / API</span><br><span class="line"></span><br><span class="line">Skill</span><br><span class="line">≈ domain capability / service</span><br><span class="line"></span><br><span class="line">Workflow</span><br><span class="line">≈ orchestration</span><br><span class="line"></span><br><span class="line">Agent</span><br><span class="line">≈ dynamic orchestrator</span><br></pre></td></tr></table></figure>
+
+<p>Skill 是对一组更底层能力的封装。</p>
+<p>例如一个大型采集 Agent 可以拥有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CrawlArticleSkill</span><br><span class="line">RepairXPathSkill</span><br><span class="line">DiscoverTargetSkill</span><br><span class="line">ValidateDataSkill</span><br></pre></td></tr></table></figure>
+
+<p>每个 Skill 内部又使用若干 Action、Tool、Rule 和 Prompt。</p>
+<hr>
+<h1 id="十一、新问题：Agent-只是一步一步选择-Action-吗？"><a href="#十一、新问题：Agent-只是一步一步选择-Action-吗？" class="headerlink" title="十一、新问题：Agent 只是一步一步选择 Action 吗？"></a>十一、新问题：Agent 只是一步一步选择 Action 吗？</h1><p>如果 Agent 只做：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Observe</span><br><span class="line"> ↓</span><br><span class="line">选择一个 Action</span><br><span class="line"> ↓</span><br><span class="line">Observe</span><br><span class="line"> ↓</span><br><span class="line">再选一个 Action</span><br></pre></td></tr></table></figure>
+
+<p>它属于比较局部的反应式决策。</p>
+<p>但用户真正给出的通常不是 Action，而是：</p>
+<h2 id="Goal"><a href="#Goal" class="headerlink" title="Goal"></a>Goal</h2><p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">获取这个 URL 的</span><br><span class="line">title</span><br><span class="line">author</span><br><span class="line">publish_time</span><br><span class="line">content</span><br></pre></td></tr></table></figure>
+
+<p>Goal 描述的是：</p>
+<blockquote>
+<p><strong>我要达到什么结果。</strong></p>
+</blockquote>
+<p>而不是：</p>
+<blockquote>
+<p><strong>具体应该怎么做。</strong></p>
+</blockquote>
+<p>于是 Agent 需要进一步考虑：</p>
+<blockquote>
+<p>为了达到 Goal，我需要执行哪些 Action？</p>
+</blockquote>
+<p>这就引出了：</p>
+<h2 id="Plan"><a href="#Plan" class="headerlink" title="Plan"></a>Plan</h2><p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">crawl</span><br><span class="line"> ↓</span><br><span class="line">extract</span><br><span class="line"> ↓</span><br><span class="line">validate</span><br></pre></td></tr></table></figure>
+
+<p>这就是一个 Plan。</p>
+<hr>
+<h1 id="十二、Plan-和-Workflow-有什么区别？"><a href="#十二、Plan-和-Workflow-有什么区别？" class="headerlink" title="十二、Plan 和 Workflow 有什么区别？"></a>十二、Plan 和 Workflow 有什么区别？</h1><p>Workflow 是开发人员提前规定好的路径：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">crawl</span><br><span class="line"> ↓</span><br><span class="line">extract</span><br><span class="line"> ↓</span><br><span class="line">validate</span><br><span class="line"> ↓</span><br><span class="line">save</span><br></pre></td></tr></table></figure>
+
+<p>Agent 主要按照这个结构执行。</p>
+<p>Plan 则是针对：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Goal + Current State</span><br></pre></td></tr></table></figure>
+
+<p>动态产生的行动方案。</p>
+<p>例如网站 A：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">crawl</span><br><span class="line"> ↓</span><br><span class="line">extract</span><br><span class="line"> ↓</span><br><span class="line">validate</span><br></pre></td></tr></table></figure>
+
+<p>网站 B：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">crawl</span><br><span class="line"> ↓</span><br><span class="line">browser_crawl</span><br><span class="line"> ↓</span><br><span class="line">extract</span><br><span class="line"> ↓</span><br><span class="line">validate</span><br></pre></td></tr></table></figure>
+
+<p>网站 C：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">crawl</span><br><span class="line"> ↓</span><br><span class="line">detect_login</span><br><span class="line"> ↓</span><br><span class="line">stop</span><br></pre></td></tr></table></figure>
+
+<p>因此：</p>
+<blockquote>
+<p><strong>Workflow 是预定义的执行结构。</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>Plan 是针对当前 Goal 和 State 形成的具体行动方案。</strong></p>
+</blockquote>
+<hr>
+<h1 id="十三、新问题：Planner-怎么知道-Action-能不能连接起来？"><a href="#十三、新问题：Planner-怎么知道-Action-能不能连接起来？" class="headerlink" title="十三、新问题：Planner 怎么知道 Action 能不能连接起来？"></a>十三、新问题：Planner 怎么知道 Action 能不能连接起来？</h1><p>这需要 Action 不只是一个名字。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">repair_xpath</span><br></pre></td></tr></table></figure>
+
+<p>还应该描述：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;name&quot;</span>: <span class="string">&quot;repair_xpath&quot;</span>,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;preconditions&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;page_loaded == true&quot;</span>,</span><br><span class="line">        <span class="string">&quot;html_available == true&quot;</span>,</span><br><span class="line">        <span class="string">&quot;article_found == false&quot;</span></span><br><span class="line">    ],</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;effects&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;new_xpath_available == true&quot;</span></span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里出现两个重要概念：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Precondition</span><br><span class="line">Effect</span><br></pre></td></tr></table></figure>
+
+<p>即：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">执行 Action 前需要满足什么条件？</span><br><span class="line"></span><br><span class="line">执行 Action 后期望 State 发生什么变化？</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">State A</span><br><span class="line">page_loaded = true</span><br><span class="line">article_found = false</span><br><span class="line"></span><br><span class="line">        │</span><br><span class="line">        │ repair_xpath</span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">State B</span><br><span class="line">new_xpath_available = true</span><br></pre></td></tr></table></figure>
+
+<p>于是 Planning 的本质开始显现。</p>
+<hr>
+<h1 id="十四、Planning-本质上是在-State-Space-中寻找路径"><a href="#十四、Planning-本质上是在-State-Space-中寻找路径" class="headerlink" title="十四、Planning 本质上是在 State Space 中寻找路径"></a>十四、Planning 本质上是在 State Space 中寻找路径</h1><p>假设：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Current State:</span><br><span class="line"></span><br><span class="line">page_loaded = false</span><br><span class="line">article_found = false</span><br><span class="line">article_valid = false</span><br></pre></td></tr></table></figure>
+
+<p>Goal：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">article_valid = true</span><br></pre></td></tr></table></figure>
+
+<p>Action：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">crawl</span><br><span class="line"></span><br><span class="line">precondition:</span><br><span class="line">url_available = true</span><br><span class="line"></span><br><span class="line">effect:</span><br><span class="line">page_loaded = true</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">extract</span><br><span class="line"></span><br><span class="line">precondition:</span><br><span class="line">page_loaded = true</span><br><span class="line"></span><br><span class="line">effect:</span><br><span class="line">article_found = true</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">validate</span><br><span class="line"></span><br><span class="line">precondition:</span><br><span class="line">article_found = true</span><br><span class="line"></span><br><span class="line">effect:</span><br><span class="line">article_valid = true</span><br></pre></td></tr></table></figure>
+
+<p>Planner 就可以形成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">S0</span><br><span class="line"> │</span><br><span class="line"> │ crawl</span><br><span class="line"> ↓</span><br><span class="line">S1</span><br><span class="line">page_loaded=true</span><br><span class="line"> │</span><br><span class="line"> │ extract</span><br><span class="line"> ↓</span><br><span class="line">S2</span><br><span class="line">article_found=true</span><br><span class="line"> │</span><br><span class="line"> │ validate</span><br><span class="line"> ↓</span><br><span class="line">S3</span><br><span class="line">article_valid=true</span><br></pre></td></tr></table></figure>
+
+<p>S3 满足 Goal。</p>
+<p>因此：</p>
+<blockquote>
+<p><strong>Planning 本质上是在 State Space 中寻找一条通过 Action 从 Current State 到 Goal State 的路径。</strong></p>
+</blockquote>
+<p>这也解释了为什么 State 对 Agent 如此重要。</p>
+<p>如果 Agent 不知道自己现在在哪里，就不可能真正规划怎样到达目标。</p>
+<hr>
+<h1 id="十五、新问题：现实世界并不会按照-Plan-发展"><a href="#十五、新问题：现实世界并不会按照-Plan-发展" class="headerlink" title="十五、新问题：现实世界并不会按照 Plan 发展"></a>十五、新问题：现实世界并不会按照 Plan 发展</h1><p>Planner 认为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">crawl</span><br><span class="line"> ↓</span><br><span class="line">Expected State:</span><br><span class="line">page_loaded = true</span><br></pre></td></tr></table></figure>
+
+<p>但 Crawl4AI 实际可能返回：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">403</span><br></pre></td></tr></table></figure>
+
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Expected State</span><br><span class="line">      ≠</span><br><span class="line">Actual State</span><br></pre></td></tr></table></figure>
+
+<p>因此 Agent 不能：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Plan → 一次性执行到底</span><br></pre></td></tr></table></figure>
+
+<p>而必须：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Plan</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> ↓</span><br><span class="line">Actual State</span><br><span class="line"> ↓</span><br><span class="line">重新判断 Plan 是否仍然有效</span><br></pre></td></tr></table></figure>
+
+<p>如果有效：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">执行 Next Action</span><br></pre></td></tr></table></figure>
+
+<p>如果无效：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Replan</span><br></pre></td></tr></table></figure>
+
+<p>于是产生真正的 Agent Loop：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">       Goal</span><br><span class="line">         ↓</span><br><span class="line">      Planner</span><br><span class="line">         ↓</span><br><span class="line">        Plan</span><br><span class="line">         ↓</span><br><span class="line">      Action</span><br><span class="line">         ↓</span><br><span class="line">      Executor</span><br><span class="line">         ↓</span><br><span class="line">        Tool</span><br><span class="line">         ↓</span><br><span class="line">    Tool Result</span><br><span class="line">         ↓</span><br><span class="line">      Observer</span><br><span class="line">         ↓</span><br><span class="line">    Observation</span><br><span class="line">         ↓</span><br><span class="line">   State Transition</span><br><span class="line">         ↓</span><br><span class="line">      New State</span><br><span class="line">         ↓</span><br><span class="line">   Goal reached?</span><br><span class="line">    /          \</span><br><span class="line">  YES           NO</span><br><span class="line">   ↓             ↓</span><br><span class="line">Finish      Plan valid?</span><br><span class="line">             /       \</span><br><span class="line">           YES        NO</span><br><span class="line">            ↓          ↓</span><br><span class="line">      Next Action    Replan</span><br></pre></td></tr></table></figure>
+
+<p>这就是今天逐步构建出来的 Agent Runtime 核心骨架。</p>
+<hr>
+<h1 id="十六、最终把今天所有概念串起来"><a href="#十六、最终把今天所有概念串起来" class="headerlink" title="十六、最终把今天所有概念串起来"></a>十六、最终把今天所有概念串起来</h1><p>可以用几个问题来记，而不是背定义：</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>它回答的问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Goal</strong></td>
+<td>我要最终得到什么？</td>
+</tr>
+<tr>
+<td><strong>State</strong></td>
+<td>我现在处于什么状态？</td>
+</tr>
+<tr>
+<td><strong>Tool Result</strong></td>
+<td>工具原始返回了什么？</td>
+</tr>
+<tr>
+<td><strong>Observer</strong></td>
+<td>如何理解工具返回？</td>
+</tr>
+<tr>
+<td><strong>Observation</strong></td>
+<td>刚才到底发生了什么？</td>
+</tr>
+<tr>
+<td><strong>State Transition</strong></td>
+<td>根据刚才发生的事情，我的状态如何变化？</td>
+</tr>
+<tr>
+<td><strong>Action Space</strong></td>
+<td>系统理论上能够做什么？</td>
+</tr>
+<tr>
+<td><strong>Policy</strong></td>
+<td>哪些事情允许做，哪些不允许做？</td>
+</tr>
+<tr>
+<td><strong>Decision</strong></td>
+<td>当前应该做什么？</td>
+</tr>
+<tr>
+<td><strong>Action</strong></td>
+<td>这一次决定执行什么？</td>
+</tr>
+<tr>
+<td><strong>Executor</strong></td>
+<td>如何把 Action 真正执行起来？</td>
+</tr>
+<tr>
+<td><strong>Tool</strong></td>
+<td>具体调用什么底层能力？</td>
+</tr>
+<tr>
+<td><strong>Skill</strong></td>
+<td>系统具备什么较完整的任务能力？</td>
+</tr>
+<tr>
+<td><strong>Plan</strong></td>
+<td>为达到 Goal，这一次准备怎么走？</td>
+</tr>
+<tr>
+<td><strong>Workflow</strong></td>
+<td>开发人员预先定义了怎样的执行结构？</td>
+</tr>
+<tr>
+<td><strong>Replan</strong></td>
+<td>当现实偏离计划以后，接下来怎么重新规划？</td>
+</tr>
+</tbody></table>
+<hr>
+<h1 id="十七、今天最重要的认识"><a href="#十七、今天最重要的认识" class="headerlink" title="十七、今天最重要的认识"></a>十七、今天最重要的认识</h1><p>最开始，我们很容易把 Agent 理解成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">Tool</span><br></pre></td></tr></table></figure>
+
+<p>今天逐层分析以后，它实际上更接近：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">        Goal</span><br><span class="line">          ↓</span><br><span class="line">        State</span><br><span class="line">          ↓</span><br><span class="line">        Plan</span><br><span class="line">          ↓</span><br><span class="line"> Available Actions</span><br><span class="line">          ↓</span><br><span class="line">       Decision</span><br><span class="line">          ↓</span><br><span class="line">        Action</span><br><span class="line">          ↓</span><br><span class="line">       Executor</span><br><span class="line">          ↓</span><br><span class="line">         Tool</span><br><span class="line">          ↓</span><br><span class="line">     Tool Result</span><br><span class="line">          ↓</span><br><span class="line">       Observer</span><br><span class="line">          ↓</span><br><span class="line">     Observation</span><br><span class="line">          ↓</span><br><span class="line">  State Transition</span><br><span class="line">          ↓</span><br><span class="line">       New State</span><br><span class="line">          ↓</span><br><span class="line">Goal / Plan Evaluation</span><br><span class="line">          ↓</span><br><span class="line"> Continue or Replan</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Agent 并不是“一个会调用工具的 LLM”。</strong></p>
+</blockquote>
+<p>更准确地说：</p>
+<blockquote>
+<p><strong>Agent 是一个围绕 Goal 持续运行的动态决策系统。它维护 State，通过 Observation 感知执行结果，在 Policy 和能力边界内选择 Action，并在现实与 Plan 不一致时不断调整甚至重新规划。</strong></p>
+</blockquote>
+<p>LLM只是这个系统中的推理组件之一。</p>
+<p>Crawl4AI也只是这个系统中的 Tool&#x2F;Capability 之一。</p>
+<hr>
+<h1 id="十八、今天的内容又留下了一个新的问题"><a href="#十八、今天的内容又留下了一个新的问题" class="headerlink" title="十八、今天的内容又留下了一个新的问题"></a>十八、今天的内容又留下了一个新的问题</h1><p>如果系统只有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">5个 Action</span><br><span class="line">3个 Tool</span><br></pre></td></tr></table></figure>
+
+<p>全部提供给 LLM 没什么问题。</p>
+<p>但是一个真正的大型采集 Agent 可能拥有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">20 Skills</span><br><span class="line">80 Actions</span><br><span class="line">150 Tools</span><br></pre></td></tr></table></figure>
+
+<p>如果每一次 Decision 都把全部 Tool 定义、Skill 描述、Policy 和 State 塞给 LLM：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Context 会越来越大</span><br><span class="line">决策越来越困难</span><br><span class="line">成本越来越高</span><br><span class="line">错误选择越来越多</span><br></pre></td></tr></table></figure>
+
+<p>所以新的问题变成：</p>
+<blockquote>
+<p><strong>面对大量能力，Agent 怎么知道当前应该使用哪个 Skill、哪个 Action、哪个 Tool？</strong></p>
+</blockquote>
+<p>显然不能简单地：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">150 Tools全部给LLM</span><br><span class="line"> ↓</span><br><span class="line">让LLM自己选</span><br></pre></td></tr></table></figure>
+
+<p>更合理的方向是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">      Goal</span><br><span class="line">        ↓</span><br><span class="line">Capability Discovery</span><br><span class="line">        ↓</span><br><span class="line">  Skill Selection</span><br><span class="line">        ↓</span><br><span class="line"> High-level Plan</span><br><span class="line">        ↓</span><br><span class="line">   Selected Skill</span><br><span class="line">        ↓</span><br><span class="line">  Local Planning</span><br><span class="line">        ↓</span><br><span class="line">      Action</span><br><span class="line">        ↓</span><br><span class="line">       Tool</span><br></pre></td></tr></table></figure>
+
+<p>也就是说，下一步要解决的已经不是：</p>
+<blockquote>
+<p><strong>“Agent 怎么调用 Tool？”</strong></p>
+</blockquote>
+<p>而是一个更高级的问题：</p>
+<blockquote>
+<p><strong>“Agent 如何组织、发现和选择自己的能力？”</strong></p>
+</blockquote>
+<p>这会进入 <strong>Skill Registry、Capability Discovery、Hierarchical Planning（分层规划）</strong>。</p>
+<p>也正是从这里开始，我们可以逐渐拿今天建立的 Agent Runtime 模型去理解 AgentScope、LangGraph 等真实 Agent 框架：它们到底解决了上面哪一层问题，而不是仅仅学习这些框架的 API。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/18/day8_2/" data-id="cuidokbugvMiSsMfLyPL9USPl" data-title="从 Crawl4AI 理解 Agent：从抓取结果到动态规划" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/09/16/day7-agent-design/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Day7 - Agent Design</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/09/18/day8_2/">从 Crawl4AI 理解 Agent：从抓取结果到动态规划</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/16/day7-agent-design/">Day7 - Agent Design</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/16/day7-agent-scope/">Day7 - Agent Scope</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/14/day5-agent%20code%20explained/">Day5 - Agent 代码逐行解析</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
