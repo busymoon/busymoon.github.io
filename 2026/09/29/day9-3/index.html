@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="好，我们继续拆 ReAct。上一节看的是“这栋房子长什么样”，这一节专门看：住进去以后，会发现哪些问题？ 案例 1 · 第二课：ReAct 的结构性缺陷上一节的核心结构是： 123456789101112131415Goal ↓Thought ↓Action ↓Environment ↓Observation ↓Thought ↓... ↓Finish  它非常漂亮，但如果真的拿去做生产系统，很快">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷">
+<meta property="og:url" content="https://busymoon.github.io/2026/09/29/day9-3/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="好，我们继续拆 ReAct。上一节看的是“这栋房子长什么样”，这一节专门看：住进去以后，会发现哪些问题？ 案例 1 · 第二课：ReAct 的结构性缺陷上一节的核心结构是： 123456789101112131415Goal ↓Thought ↓Action ↓Environment ↓Observation ↓Thought ↓... ↓Finish  它非常漂亮，但如果真的拿去做生产系统，很快">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-29T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-29T14:42:05.762Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="ReAct">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://busymoon.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-day9-3" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/29/day9-3/" class="article-date">
+  <time class="dt-published" datetime="2026-09-29T02:00:00.000Z" itemprop="datePublished">2026-09-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>好，我们继续拆 <strong>ReAct</strong>。上一节看的是“这栋房子长什么样”，这一节专门看：<strong>住进去以后，会发现哪些问题？</strong></p>
+<h1 id="案例-1-·-第二课：ReAct-的结构性缺陷"><a href="#案例-1-·-第二课：ReAct-的结构性缺陷" class="headerlink" title="案例 1 · 第二课：ReAct 的结构性缺陷"></a>案例 1 · 第二课：ReAct 的结构性缺陷</h1><p>上一节的核心结构是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Thought</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Environment</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> ↓</span><br><span class="line">Thought</span><br><span class="line"> ↓</span><br><span class="line">...</span><br><span class="line"> ↓</span><br><span class="line">Finish</span><br></pre></td></tr></table></figure>
+
+<p>它非常漂亮，但如果真的拿去做生产系统，很快会碰到一系列问题。</p>
+<p>我们逐个看。</p>
+<hr>
+<h2 id="一、问题-1：Action-是自然语言，机器怎么可靠执行？"><a href="#一、问题-1：Action-是自然语言，机器怎么可靠执行？" class="headerlink" title="一、问题 1：Action 是自然语言，机器怎么可靠执行？"></a>一、问题 1：Action 是自然语言，机器怎么可靠执行？</h2><p>原始 ReAct 风格可能生成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">Search[Ernest Hemingway birthplace]</span><br></pre></td></tr></table></figure>
+
+<p>人一眼就明白。</p>
+<p>但程序需要解析它：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tool = <span class="string">&quot;Search&quot;</span></span><br><span class="line">argument = <span class="string">&quot;Ernest Hemingway birthplace&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>如果 LLM 输出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Search for Ernest Hemingway birthplace</span><br></pre></td></tr></table></figure>
+
+<p>或者：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">Google(&quot;Ernest Hemingway birthplace&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>怎么办？</p>
+<p>意思都对，但程序可能无法执行。</p>
+<p>这就暴露出第一个工程问题：</p>
+<blockquote>
+<p><strong>LLM 使用自然语言，而程序需要确定的数据结构。</strong></p>
+</blockquote>
+<p>后来现代 Agent 大量采用：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;search&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;arguments&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Ernest Hemingway birthplace&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>于是产生了我们今天非常熟悉的一套东西：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Tool</span><br><span class="line">Tool Schema</span><br><span class="line">Structured Output</span><br><span class="line">Function Calling</span><br></pre></td></tr></table></figure>
+
+<p>注意它们出现的逻辑：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ReAct Action</span><br><span class="line">    ↓</span><br><span class="line">自然语言不稳定</span><br><span class="line">    ↓</span><br><span class="line">机器难以可靠解析</span><br><span class="line">    ↓</span><br><span class="line">Structured Action</span><br><span class="line">    ↓</span><br><span class="line">Tool Schema</span><br></pre></td></tr></table></figure>
+
+<p>所以 <strong>Tool Schema 本质上是在定义 Action Space 的机器接口。</strong></p>
+<p>这是第一个非常重要的认识。</p>
+<hr>
+<h1 id="二、问题-2：Agent-怎么知道自己现在处于什么状态？"><a href="#二、问题-2：Agent-怎么知道自己现在处于什么状态？" class="headerlink" title="二、问题 2：Agent 怎么知道自己现在处于什么状态？"></a>二、问题 2：Agent 怎么知道自己现在处于什么状态？</h1><p>假设一个 Agent 已经运行了很多轮：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Thought 1</span><br><span class="line">Action 1</span><br><span class="line">Observation 1</span><br><span class="line"></span><br><span class="line">Thought 2</span><br><span class="line">Action 2</span><br><span class="line">Observation 2</span><br><span class="line"></span><br><span class="line">Thought 3</span><br><span class="line">Action 3</span><br><span class="line">Observation 3</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thought 15</span><br></pre></td></tr></table></figure>
+
+<p>现在模型需要回答：</p>
+<blockquote>
+<p>我已经做过什么？</p>
+<p>哪些方法失败了？</p>
+<p>当前掌握了什么信息？</p>
+<p>下一步应该干什么？</p>
+</blockquote>
+<p>原始 ReAct 最简单的办法是：</p>
+<p><strong>把前面的历史全部给 LLM。</strong></p>
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">History</span><br><span class="line">   ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">User: ...</span><br><span class="line"></span><br><span class="line">Thought: ...</span><br><span class="line">Action: ...</span><br><span class="line">Observation: ...</span><br><span class="line"></span><br><span class="line">Thought: ...</span><br><span class="line">Action: ...</span><br><span class="line">Observation: ...</span><br><span class="line"></span><br><span class="line">Thought: ...</span><br><span class="line">Action: ...</span><br><span class="line">Observation: ...</span><br></pre></td></tr></table></figure>
+
+<p>但是任务越来越长以后，会出现问题：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">History越来越长</span><br><span class="line">      ↓</span><br><span class="line">Context越来越大</span><br><span class="line">      ↓</span><br><span class="line">重要信息被淹没</span><br></pre></td></tr></table></figure>
+
+<p>更严重的是：</p>
+<p><strong>History ≠ State。</strong></p>
+<p>这是一个很关键的区别。</p>
+<hr>
+<h2 id="三、History-和-State-为什么不是一回事？"><a href="#三、History-和-State-为什么不是一回事？" class="headerlink" title="三、History 和 State 为什么不是一回事？"></a>三、History 和 State 为什么不是一回事？</h2><p>假设你看到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">09:00 请求网页失败</span><br><span class="line">09:01 更换代理</span><br><span class="line">09:02 请求失败</span><br><span class="line">09:03 更换代理</span><br><span class="line">09:04 请求成功</span><br></pre></td></tr></table></figure>
+
+<p>这是：</p>
+<p><strong>History。</strong></p>
+<p>但现在系统真正关心的可能只是：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;status&quot;</span><span class="punctuation">:</span> <span class="string">&quot;SUCCESS&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;retry_count&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;proxy_switch_count&quot;</span><span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>这是：</p>
+<p><strong>State。</strong></p>
+<p>区别非常明显：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">History</span><br><span class="line">= 发生过什么</span><br><span class="line"></span><br><span class="line">State</span><br><span class="line">= 系统现在是什么状态</span><br></pre></td></tr></table></figure>
+
+<p>因此：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">History</span><br><span class="line">      ↓</span><br><span class="line">提取 / 更新</span><br><span class="line">      ↓</span><br><span class="line">State</span><br><span class="line">      ↓</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
+
+<p>这就是为什么后来很多 Agent 框架开始显式维护 <strong>State</strong>。</p>
+<p>你以前已经学过 State，但现在应该更容易理解：</p>
+<blockquote>
+<p>State 并不是 Agent 理论家凭空创造的概念，而是在解决“不能永远依赖完整 History 做决策”这个工程问题。 </p>
+</blockquote>
+<hr>
+<h1 id="四、问题-3：ReAct-很容易“走一步看一步”"><a href="#四、问题-3：ReAct-很容易“走一步看一步”" class="headerlink" title="四、问题 3：ReAct 很容易“走一步看一步”"></a>四、问题 3：ReAct 很容易“走一步看一步”</h1><p>假设任务变成：</p>
+<blockquote>
+<p>调研量子计算领域，并生成一份产业研究报告。</p>
+</blockquote>
+<p>简单 ReAct 可能：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">Thought:</span><br><span class="line">先搜索量子计算市场规模。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">Search(...)</span><br><span class="line"></span><br><span class="line">Observation:</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thought:</span><br><span class="line">再看看主要公司。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">Search(...)</span><br><span class="line"></span><br><span class="line">Observation:</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thought:</span><br><span class="line">IBM好像很重要，再搜索IBM。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">Search(...)</span><br><span class="line"></span><br><span class="line">Observation:</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>它每一次都在回答：</p>
+<blockquote>
+<p><strong>我下一步干什么？</strong></p>
+</blockquote>
+<p>但没有先回答：</p>
+<blockquote>
+<p><strong>为了完成最终目标，我总共需要完成哪些子任务？</strong></p>
+</blockquote>
+<p>于是可能出现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">搜市场</span><br><span class="line"> ↓</span><br><span class="line">搜IBM</span><br><span class="line"> ↓</span><br><span class="line">搜IBM芯片</span><br><span class="line"> ↓</span><br><span class="line">搜IBM路线图</span><br><span class="line"> ↓</span><br><span class="line">搜Google</span><br><span class="line"> ↓</span><br><span class="line">突然又搜市场</span><br><span class="line"> ↓</span><br><span class="line">发现缺少投资信息</span><br><span class="line"> ↓</span><br><span class="line">重新搜索……</span><br></pre></td></tr></table></figure>
+
+<p>这就是典型的：</p>
+<p><strong>局部决策能力强，但全局结构弱。</strong></p>
+<p>于是出现另外一种思想：</p>
+<h1 id="Planning"><a href="#Planning" class="headerlink" title="Planning"></a>Planning</h1><p>先：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Plan</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">量子计算产业研究</span><br><span class="line"></span><br><span class="line">1. 技术路线</span><br><span class="line">2. 市场规模</span><br><span class="line">3. 主要公司</span><br><span class="line">4. 商业应用</span><br><span class="line">5. 投融资</span><br><span class="line">6. 技术瓶颈</span><br><span class="line">7. 未来趋势</span><br></pre></td></tr></table></figure>
+
+<p>然后：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Plan</span><br><span class="line"> ↓</span><br><span class="line">Task 1</span><br><span class="line"> ↓</span><br><span class="line">Task 2</span><br><span class="line"> ↓</span><br><span class="line">Task 3</span><br><span class="line"> ...</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Planning 解决的不是“下一步做什么”，而是“为了完成 Goal，需要经过怎样的任务结构”。</strong></p>
+</blockquote>
+<p>这和 ReAct 的 Thought 是不同层次的问题。</p>
+<hr>
+<h1 id="五、这里第一次出现两个时间尺度"><a href="#五、这里第一次出现两个时间尺度" class="headerlink" title="五、这里第一次出现两个时间尺度"></a>五、这里第一次出现两个时间尺度</h1><p>这是非常值得理解的一点。</p>
+<p>ReAct 的 Decision 通常是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">现在做什么？</span><br></pre></td></tr></table></figure>
+
+<p>属于<strong>短时间尺度</strong>。</p>
+<p>Planning：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">整个任务怎么完成？</span><br></pre></td></tr></table></figure>
+
+<p>属于<strong>长时间尺度</strong>。</p>
+<p>于是现代 Agent 经常出现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">       Goal</span><br><span class="line">         ↓</span><br><span class="line">      Planner</span><br><span class="line">         ↓</span><br><span class="line">┌────────────────┐</span><br><span class="line">│      Plan      │</span><br><span class="line">│ T1 T2 T3 T4 T5 │</span><br><span class="line">└───────┬────────┘</span><br><span class="line">        ↓</span><br><span class="line">     Executor</span><br><span class="line">        ↓</span><br><span class="line">    Decision</span><br><span class="line">        ↓</span><br><span class="line">     Action</span><br></pre></td></tr></table></figure>
+
+<p>这里：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Planner</span><br><span class="line">= 战略层</span><br><span class="line"></span><br><span class="line">Decision</span><br><span class="line">= 战术层</span><br><span class="line"></span><br><span class="line">Action</span><br><span class="line">= 执行层</span><br></pre></td></tr></table></figure>
+
+<p>这个三层关系以后非常重要。</p>
+<hr>
+<h1 id="六、问题-4：LLM-可能选择“不允许”的-Action"><a href="#六、问题-4：LLM-可能选择“不允许”的-Action" class="headerlink" title="六、问题 4：LLM 可能选择“不允许”的 Action"></a>六、问题 4：LLM 可能选择“不允许”的 Action</h1><p>假设 Agent 有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">send_email()</span><br><span class="line">delete_file()</span><br><span class="line">query_database()</span><br></pre></td></tr></table></figure>
+
+<p>用户说：</p>
+<blockquote>
+<p>帮我分析这些文件。</p>
+</blockquote>
+<p>LLM 某一步突然决定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">delete_file(...)</span><br></pre></td></tr></table></figure>
+
+<p>从推理角度，它可能觉得删除临时文件很合理。</p>
+<p>但是：</p>
+<blockquote>
+<p><strong>系统是否允许它删除文件？</strong></p>
+</blockquote>
+<p>这是另一个完全不同的问题。</p>
+<p>Decision 解决：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">我想做什么？</span><br></pre></td></tr></table></figure>
+
+<p>Policy 解决：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">你能不能这么做？</span><br></pre></td></tr></table></figure>
+
+<p>于是出现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Decision</span><br><span class="line">   ↓</span><br><span class="line">Proposed Action</span><br><span class="line">   ↓</span><br><span class="line">Policy / Guard</span><br><span class="line">   ↓</span><br><span class="line">Allowed?</span><br><span class="line">  /     \</span><br><span class="line">Yes     No</span><br><span class="line"> ↓       ↓</span><br><span class="line">Execute Reject</span><br></pre></td></tr></table></figure>
+
+<p>这也解释了你之前一直讨论的一个问题：</p>
+<blockquote>
+<p><strong>Policy 不应该和 Decision 混成一个东西。</strong></p>
+</blockquote>
+<p>Decision 可以提出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">delete_file</span><br></pre></td></tr></table></figure>
+
+<p>Policy Guard 可以回答：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DENY</span><br></pre></td></tr></table></figure>
+
+<p>它们承担不同责任。</p>
+<hr>
+<h1 id="七、问题-5：Agent-每次都会“重新思考”"><a href="#七、问题-5：Agent-每次都会“重新思考”" class="headerlink" title="七、问题 5：Agent 每次都会“重新思考”"></a>七、问题 5：Agent 每次都会“重新思考”</h1><p>假设 Agent 第一次遇到某网站：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">普通请求</span><br><span class="line"> ↓</span><br><span class="line">失败</span><br><span class="line"> ↓</span><br><span class="line">分析</span><br><span class="line"> ↓</span><br><span class="line">发现需要JS渲染</span><br><span class="line"> ↓</span><br><span class="line">切换浏览器</span><br><span class="line"> ↓</span><br><span class="line">成功</span><br></pre></td></tr></table></figure>
+
+<p>第二天再次遇到同一个网站：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">普通请求</span><br><span class="line"> ↓</span><br><span class="line">失败</span><br><span class="line"> ↓</span><br><span class="line">分析</span><br><span class="line"> ↓</span><br><span class="line">发现需要JS渲染</span><br><span class="line"> ↓</span><br><span class="line">切换浏览器</span><br><span class="line"> ↓</span><br><span class="line">成功</span><br></pre></td></tr></table></figure>
+
+<p>第三天：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">又来一遍……</span><br></pre></td></tr></table></figure>
+
+<p>这显然很浪费。</p>
+<p>于是出现一个自然的问题：</p>
+<blockquote>
+<p><strong>过去成功解决问题的经验，能不能留下来？</strong></p>
+</blockquote>
+<p>这就是 <strong>Memory</strong> 开始发挥作用的地方。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Memory:</span><br><span class="line"></span><br><span class="line">example.com</span><br><span class="line">→ requires_browser = true</span><br><span class="line">→ preferred_tool = playwright</span><br></pre></td></tr></table></figure>
+
+<p>下一次：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Retrieve Memory</span><br><span class="line"> ↓</span><br><span class="line">直接使用 Browser</span><br></pre></td></tr></table></figure>
+
+<p>于是 Agent 从：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">每次重新推理</span><br></pre></td></tr></table></figure>
+
+<p>开始变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">经验</span><br><span class="line"> ↓</span><br><span class="line">保存</span><br><span class="line"> ↓</span><br><span class="line">检索</span><br><span class="line"> ↓</span><br><span class="line">影响未来决策</span><br></pre></td></tr></table></figure>
+
+<p>这才是 Memory 真正有价值的地方。</p>
+<hr>
+<h1 id="八、现在回头看-ReAct"><a href="#八、现在回头看-ReAct" class="headerlink" title="八、现在回头看 ReAct"></a>八、现在回头看 ReAct</h1><p>原始房子：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Thought</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> ↺</span><br></pre></td></tr></table></figure>
+
+<p>我们只是认真问了几个工程问题：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Action 怎么可靠执行？</span><br><span class="line">→ Tool Schema</span><br><span class="line"></span><br><span class="line">历史越来越长怎么办？</span><br><span class="line">→ State</span><br><span class="line"></span><br><span class="line">复杂任务没有全局结构怎么办？</span><br><span class="line">→ Planning</span><br><span class="line"></span><br><span class="line">LLM想做危险/不允许的事情怎么办？</span><br><span class="line">→ Policy</span><br><span class="line"></span><br><span class="line">过去成功经验为什么不能复用？</span><br><span class="line">→ Memory</span><br></pre></td></tr></table></figure>
+
+<p>于是房子慢慢变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">                 Goal</span><br><span class="line">                  ↓</span><br><span class="line">               Planner</span><br><span class="line">                  ↓</span><br><span class="line">                 Plan</span><br><span class="line">                  ↓</span><br><span class="line">Memory ─────→ Context</span><br><span class="line">                  ↓</span><br><span class="line">                State</span><br><span class="line">                  ↓</span><br><span class="line">              Decision</span><br><span class="line">                  ↓</span><br><span class="line">          Proposed Action</span><br><span class="line">                  ↓</span><br><span class="line">            Policy Guard</span><br><span class="line">                  ↓</span><br><span class="line">             Tool Schema</span><br><span class="line">                  ↓</span><br><span class="line">                Tool</span><br><span class="line">                  ↓</span><br><span class="line">            Environment</span><br><span class="line">                  ↓</span><br><span class="line">             Observation</span><br><span class="line">                  ↓</span><br><span class="line">             State Update</span><br><span class="line">                  │</span><br><span class="line">                  └────→ Memory</span><br></pre></td></tr></table></figure>
+
+<p>你会发现：</p>
+<p><strong>现代 Agent 的复杂结构不是为了显得高级。</strong></p>
+<p>它基本上是：</p>
+<blockquote>
+<p><strong>ReAct 在真实工程环境中不断暴露问题，然后一个组件一个组件补出来的。</strong></p>
+</blockquote>
+<hr>
+<h1 id="九、但是这里还有一个非常大的问题"><a href="#九、但是这里还有一个非常大的问题" class="headerlink" title="九、但是这里还有一个非常大的问题"></a>九、但是这里还有一个非常大的问题</h1><p>到目前为止，我们默认：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Thought</span><br><span class="line">Decision</span><br><span class="line">Planning</span><br></pre></td></tr></table></figure>
+
+<p>主要都由 <strong>LLM</strong> 完成。</p>
+<p>但真的是这样吗？</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">retry_count &gt;= 3</span><br><span class="line">→ stop</span><br></pre></td></tr></table></figure>
+
+<p>需要 LLM 吗？</p>
+<p>显然不需要。</p>
+<p>再例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HTTP 429</span><br><span class="line">→ wait 60 seconds</span><br></pre></td></tr></table></figure>
+
+<p>需要 LLM 吗？</p>
+<p>可能也不需要。</p>
+<p>而：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">页面结构完全改变，</span><br><span class="line">应该修改 XPath，</span><br><span class="line">切换视觉解析，</span><br><span class="line">还是交给人工？</span><br></pre></td></tr></table></figure>
+
+<p>这里才可能真正需要 LLM。</p>
+<p>所以 ReAct 给我们留下了一个更深的问题：</p>
+<blockquote>
+<p><strong>Agent 中到底哪些 Decision 应该交给 LLM，哪些应该交给确定性程序？</strong></p>
+</blockquote>
+<p>这个问题非常重要，但我们先不回答。</p>
+<p>因为按照我们现在的学习方法，<strong>应该去看下一栋房子是怎么解决的。</strong></p>
+<hr>
+<h1 id="下一经典案例：Tool-Using-Agent"><a href="#下一经典案例：Tool-Using-Agent" class="headerlink" title="下一经典案例：Tool-Using Agent"></a>下一经典案例：Tool-Using Agent</h1><p>下一课我们离开 ReAct，开始拆第二个经典案例：</p>
+<p><strong>现代 Tool-Using Agent &#x2F; Function Calling Agent。</strong></p>
+<p>重点不是学习 API，而是看一个非常重要的演化：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ReAct</span><br><span class="line"></span><br><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">自然语言 Action</span><br><span class="line"> ↓</span><br><span class="line">解析</span><br><span class="line"> ↓</span><br><span class="line">执行</span><br></pre></td></tr></table></figure>
+
+<p>如何演化成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Modern Tool Agent</span><br><span class="line"></span><br><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">选择 Tool</span><br><span class="line"> ↓</span><br><span class="line">生成结构化 Arguments</span><br><span class="line"> ↓</span><br><span class="line">程序校验</span><br><span class="line"> ↓</span><br><span class="line">Tool Execution</span><br><span class="line"> ↓</span><br><span class="line">Tool Result</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>到时候我们会重点拆一个具体的 <strong>Tool Schema + Tool Selection + Tool Execution + Tool Result</strong> 完整运行过程。</p>
+<p>看完第二栋房子，你应该会真正理解 <strong>Tool、Action、Function Calling、Structured Output、Schema、Environment</strong> 这些概念之间到底是什么关系，而不是分别背它们的定义。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/29/day9-3/" data-id="cuid3dZwAvfx4NKLXAcebuT4C" data-title="Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/09/29/day9-1/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2026/09/18/day8_2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">从 Crawl4AI 理解 Agent：从抓取结果到动态规划</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/09/29/day9-1/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/29/day9-3/">Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/18/day8_2/">从 Crawl4AI 理解 Agent：从抓取结果到动态规划</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/16/day7-agent-design/">Day7 - Agent Design</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/16/day7-agent-scope/">Day7 - Agent Scope</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

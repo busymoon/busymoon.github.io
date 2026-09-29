@@ -71,6 +71,423 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-day9-1" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/29/day9-1/" class="article-date">
+  <time class="dt-published" datetime="2026-09-29T14:28:17.974Z" itemprop="datePublished">2026-09-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>明白了。你需要的不是“知识点课程”，也不是“带着你做项目”，而是类似<strong>建筑案例赏析课</strong>：先大量拆解经典 Agent，看别人为什么这么设计；见得足够多以后，再谈自己设计。</p>
+<p>这也更适合你现在的阶段：你已经认识不少 Agent 概念，下一步应该建立的是<strong>架构见识和模式感</strong>。</p>
+<p>我建议把课程改成 <strong>《经典 Agent 案例精读》</strong>，选择 8 个有代表性的系统，而且每个案例承担不同的知识任务。</p>
+<table>
+<thead>
+<tr>
+<th>案例</th>
+<th>重点学习什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>1. ReAct Agent</strong></td>
+<td>Agent 最基本的 Thought → Action → Observation 循环</td>
+</tr>
+<tr>
+<td><strong>2. OpenAI Function Calling &#x2F; Tool Agent</strong></td>
+<td>LLM 如何选择工具；Tool Schema、Structured Output</td>
+</tr>
+<tr>
+<td><strong>3. Anthropic Claude Tool Use Agent</strong></td>
+<td>Tool Use、Context、Agent Loop 的工程实现</td>
+</tr>
+<tr>
+<td><strong>4. LangGraph Agent</strong></td>
+<td>State、Node、Edge、状态机、确定性流程与 LLM 决策如何结合</td>
+</tr>
+<tr>
+<td><strong>5. OpenAI Deep Research</strong></td>
+<td>搜索、规划、信息积累、长任务、引用与终止条件</td>
+</tr>
+<tr>
+<td><strong>6. SWE-agent</strong></td>
+<td>Agent 如何真正修改代码：Environment、Action Space、Feedback</td>
+</tr>
+<tr>
+<td><strong>7. Voyager</strong></td>
+<td>Skill Library、Memory、自动学习、能力积累</td>
+</tr>
+<tr>
+<td><strong>8. AutoGen &#x2F; AgentScope Multi-Agent</strong></td>
+<td>多 Agent 的角色、通信、协作和调度</td>
+</tr>
+</tbody></table>
+<p>这里的顺序很重要。</p>
+<p>不是按照“基础知识第一章、Memory 第二章”来讲，而是<strong>每拆一个真正的 Agent，就增加一部分认识</strong>。</p>
+<p>比如学完 ReAct，你脑子里应该只有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">Thought</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Environment</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> └────→ LLM</span><br></pre></td></tr></table></figure>
+
+<p>然后看 Tool Agent，发现：</p>
+<blockquote>
+<p>原来 Action 不能只是自然语言，真正的工程系统需要定义 <strong>Action Space &#x2F; Tool Schema</strong>。</p>
+</blockquote>
+<p>模型扩展成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Decision</span><br><span class="line">   ↓</span><br><span class="line">Tool Selection</span><br><span class="line">   ↓</span><br><span class="line">Structured Arguments</span><br><span class="line">   ↓</span><br><span class="line">Tool</span><br><span class="line">   ↓</span><br><span class="line">Tool Result</span><br></pre></td></tr></table></figure>
+
+<p>再看 LangGraph，你会发现：</p>
+<blockquote>
+<p>原来不能什么都交给 LLM，还需要显式 State 和确定性控制流。</p>
+</blockquote>
+<p>于是模型继续生长：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">        State</span><br><span class="line">          ↓</span><br><span class="line">Node → Decision → Node</span><br><span class="line"> ↑                 ↓</span><br><span class="line"> └──── State ──────┘</span><br></pre></td></tr></table></figure>
+
+<p>到了 Voyager，你又会发现：</p>
+<blockquote>
+<p>Agent 不一定每次都从零开始，它可以把成功经验沉淀成 Skill。</p>
+</blockquote>
+<p>这时候再理解 <strong>Memory &#x2F; Skill &#x2F; Knowledge</strong>，就不会是背定义，而是知道：“哦，Voyager 为了解决这个问题才引入它。”</p>
+<p>这正是你刚才说的<strong>先看房子，再学怎么造房子</strong>。</p>
+<h3 id="每个案例我固定拆-7-层"><a href="#每个案例我固定拆-7-层" class="headerlink" title="每个案例我固定拆 7 层"></a>每个案例我固定拆 7 层</h3><p>以后不急着让你做设计题，而是我带你“读建筑”。</p>
+<p><strong>第一层：它要解决什么问题。</strong></p>
+<p><strong>第二层：整体架构长什么样。</strong></p>
+<p><strong>第三层：一次真实任务怎么跑完整个流程。</strong></p>
+<p><strong>第四层：逐个拆核心组件。</strong></p>
+<p><strong>第五层：为什么这么设计，不那么设计。</strong></p>
+<p><strong>第六层：从这个案例引出新的 Agent 知识点。</strong></p>
+<p><strong>第七层：如果去掉某个组件，会发生什么。</strong></p>
+<p>尤其第 5、7 层会重点讲，因为它们最能建立架构直觉。</p>
+<p>课程前半段也暂时<strong>不要求你设计自己的 Agent</strong>。最多问你一些理解题，例如：</p>
+<blockquote>
+<p>ReAct 为什么一定需要 Observation？</p>
+</blockquote>
+<blockquote>
+<p>如果 Action 不受约束会发生什么？</p>
+</blockquote>
+<blockquote>
+<p>SWE-agent 为什么需要专门设计 Action Space？</p>
+</blockquote>
+<p>这些是在训练你“看懂房子”。</p>
+<p>等经典案例看得足够多以后，我们再做第二阶段：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">看懂 Agent</span><br><span class="line">    ↓</span><br><span class="line">比较 Agent</span><br><span class="line">    ↓</span><br><span class="line">发现重复模式</span><br><span class="line">    ↓</span><br><span class="line">抽象 Agent Pattern</span><br><span class="line">    ↓</span><br><span class="line">最后才是</span><br><span class="line">设计自己的 Agent</span><br></pre></td></tr></table></figure>
+
+<p>我认为这会比我们前面两种学习方式更适合你。</p>
+<p><strong>下一课就正式从第一个经典案例 ReAct 开始。</strong> 我不会先给你讲一堆 Thought、Observation、Reasoning 的定义，而是先把 ReAct 原论文中的一个典型任务完整跑一遍，然后像拆机器一样，一层层拆开它。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/29/day9-1/" data-id="cuidwl-OZFFAWKxae2qY4u7aH" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-day9-3" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/29/day9-3/" class="article-date">
+  <time class="dt-published" datetime="2026-09-29T02:00:00.000Z" itemprop="datePublished">2026-09-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/29/day9-3/">Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>好，我们继续拆 <strong>ReAct</strong>。上一节看的是“这栋房子长什么样”，这一节专门看：<strong>住进去以后，会发现哪些问题？</strong></p>
+<h1 id="案例-1-·-第二课：ReAct-的结构性缺陷"><a href="#案例-1-·-第二课：ReAct-的结构性缺陷" class="headerlink" title="案例 1 · 第二课：ReAct 的结构性缺陷"></a>案例 1 · 第二课：ReAct 的结构性缺陷</h1><p>上一节的核心结构是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Thought</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Environment</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> ↓</span><br><span class="line">Thought</span><br><span class="line"> ↓</span><br><span class="line">...</span><br><span class="line"> ↓</span><br><span class="line">Finish</span><br></pre></td></tr></table></figure>
+
+<p>它非常漂亮，但如果真的拿去做生产系统，很快会碰到一系列问题。</p>
+<p>我们逐个看。</p>
+<hr>
+<h2 id="一、问题-1：Action-是自然语言，机器怎么可靠执行？"><a href="#一、问题-1：Action-是自然语言，机器怎么可靠执行？" class="headerlink" title="一、问题 1：Action 是自然语言，机器怎么可靠执行？"></a>一、问题 1：Action 是自然语言，机器怎么可靠执行？</h2><p>原始 ReAct 风格可能生成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">Search[Ernest Hemingway birthplace]</span><br></pre></td></tr></table></figure>
+
+<p>人一眼就明白。</p>
+<p>但程序需要解析它：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tool = <span class="string">&quot;Search&quot;</span></span><br><span class="line">argument = <span class="string">&quot;Ernest Hemingway birthplace&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>如果 LLM 输出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Search for Ernest Hemingway birthplace</span><br></pre></td></tr></table></figure>
+
+<p>或者：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">Google(&quot;Ernest Hemingway birthplace&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>怎么办？</p>
+<p>意思都对，但程序可能无法执行。</p>
+<p>这就暴露出第一个工程问题：</p>
+<blockquote>
+<p><strong>LLM 使用自然语言，而程序需要确定的数据结构。</strong></p>
+</blockquote>
+<p>后来现代 Agent 大量采用：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;search&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;arguments&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Ernest Hemingway birthplace&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>于是产生了我们今天非常熟悉的一套东西：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Tool</span><br><span class="line">Tool Schema</span><br><span class="line">Structured Output</span><br><span class="line">Function Calling</span><br></pre></td></tr></table></figure>
+
+<p>注意它们出现的逻辑：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ReAct Action</span><br><span class="line">    ↓</span><br><span class="line">自然语言不稳定</span><br><span class="line">    ↓</span><br><span class="line">机器难以可靠解析</span><br><span class="line">    ↓</span><br><span class="line">Structured Action</span><br><span class="line">    ↓</span><br><span class="line">Tool Schema</span><br></pre></td></tr></table></figure>
+
+<p>所以 <strong>Tool Schema 本质上是在定义 Action Space 的机器接口。</strong></p>
+<p>这是第一个非常重要的认识。</p>
+<hr>
+<h1 id="二、问题-2：Agent-怎么知道自己现在处于什么状态？"><a href="#二、问题-2：Agent-怎么知道自己现在处于什么状态？" class="headerlink" title="二、问题 2：Agent 怎么知道自己现在处于什么状态？"></a>二、问题 2：Agent 怎么知道自己现在处于什么状态？</h1><p>假设一个 Agent 已经运行了很多轮：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Thought 1</span><br><span class="line">Action 1</span><br><span class="line">Observation 1</span><br><span class="line"></span><br><span class="line">Thought 2</span><br><span class="line">Action 2</span><br><span class="line">Observation 2</span><br><span class="line"></span><br><span class="line">Thought 3</span><br><span class="line">Action 3</span><br><span class="line">Observation 3</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thought 15</span><br></pre></td></tr></table></figure>
+
+<p>现在模型需要回答：</p>
+<blockquote>
+<p>我已经做过什么？</p>
+<p>哪些方法失败了？</p>
+<p>当前掌握了什么信息？</p>
+<p>下一步应该干什么？</p>
+</blockquote>
+<p>原始 ReAct 最简单的办法是：</p>
+<p><strong>把前面的历史全部给 LLM。</strong></p>
+<p>于是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">History</span><br><span class="line">   ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">User: ...</span><br><span class="line"></span><br><span class="line">Thought: ...</span><br><span class="line">Action: ...</span><br><span class="line">Observation: ...</span><br><span class="line"></span><br><span class="line">Thought: ...</span><br><span class="line">Action: ...</span><br><span class="line">Observation: ...</span><br><span class="line"></span><br><span class="line">Thought: ...</span><br><span class="line">Action: ...</span><br><span class="line">Observation: ...</span><br></pre></td></tr></table></figure>
+
+<p>但是任务越来越长以后，会出现问题：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">History越来越长</span><br><span class="line">      ↓</span><br><span class="line">Context越来越大</span><br><span class="line">      ↓</span><br><span class="line">重要信息被淹没</span><br></pre></td></tr></table></figure>
+
+<p>更严重的是：</p>
+<p><strong>History ≠ State。</strong></p>
+<p>这是一个很关键的区别。</p>
+<hr>
+<h2 id="三、History-和-State-为什么不是一回事？"><a href="#三、History-和-State-为什么不是一回事？" class="headerlink" title="三、History 和 State 为什么不是一回事？"></a>三、History 和 State 为什么不是一回事？</h2><p>假设你看到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">09:00 请求网页失败</span><br><span class="line">09:01 更换代理</span><br><span class="line">09:02 请求失败</span><br><span class="line">09:03 更换代理</span><br><span class="line">09:04 请求成功</span><br></pre></td></tr></table></figure>
+
+<p>这是：</p>
+<p><strong>History。</strong></p>
+<p>但现在系统真正关心的可能只是：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;status&quot;</span><span class="punctuation">:</span> <span class="string">&quot;SUCCESS&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;retry_count&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;proxy_switch_count&quot;</span><span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>这是：</p>
+<p><strong>State。</strong></p>
+<p>区别非常明显：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">History</span><br><span class="line">= 发生过什么</span><br><span class="line"></span><br><span class="line">State</span><br><span class="line">= 系统现在是什么状态</span><br></pre></td></tr></table></figure>
+
+<p>因此：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">History</span><br><span class="line">      ↓</span><br><span class="line">提取 / 更新</span><br><span class="line">      ↓</span><br><span class="line">State</span><br><span class="line">      ↓</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
+
+<p>这就是为什么后来很多 Agent 框架开始显式维护 <strong>State</strong>。</p>
+<p>你以前已经学过 State，但现在应该更容易理解：</p>
+<blockquote>
+<p>State 并不是 Agent 理论家凭空创造的概念，而是在解决“不能永远依赖完整 History 做决策”这个工程问题。 </p>
+</blockquote>
+<hr>
+<h1 id="四、问题-3：ReAct-很容易“走一步看一步”"><a href="#四、问题-3：ReAct-很容易“走一步看一步”" class="headerlink" title="四、问题 3：ReAct 很容易“走一步看一步”"></a>四、问题 3：ReAct 很容易“走一步看一步”</h1><p>假设任务变成：</p>
+<blockquote>
+<p>调研量子计算领域，并生成一份产业研究报告。</p>
+</blockquote>
+<p>简单 ReAct 可能：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">Thought:</span><br><span class="line">先搜索量子计算市场规模。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">Search(...)</span><br><span class="line"></span><br><span class="line">Observation:</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thought:</span><br><span class="line">再看看主要公司。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">Search(...)</span><br><span class="line"></span><br><span class="line">Observation:</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thought:</span><br><span class="line">IBM好像很重要，再搜索IBM。</span><br><span class="line"></span><br><span class="line">Action:</span><br><span class="line">Search(...)</span><br><span class="line"></span><br><span class="line">Observation:</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>它每一次都在回答：</p>
+<blockquote>
+<p><strong>我下一步干什么？</strong></p>
+</blockquote>
+<p>但没有先回答：</p>
+<blockquote>
+<p><strong>为了完成最终目标，我总共需要完成哪些子任务？</strong></p>
+</blockquote>
+<p>于是可能出现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">搜市场</span><br><span class="line"> ↓</span><br><span class="line">搜IBM</span><br><span class="line"> ↓</span><br><span class="line">搜IBM芯片</span><br><span class="line"> ↓</span><br><span class="line">搜IBM路线图</span><br><span class="line"> ↓</span><br><span class="line">搜Google</span><br><span class="line"> ↓</span><br><span class="line">突然又搜市场</span><br><span class="line"> ↓</span><br><span class="line">发现缺少投资信息</span><br><span class="line"> ↓</span><br><span class="line">重新搜索……</span><br></pre></td></tr></table></figure>
+
+<p>这就是典型的：</p>
+<p><strong>局部决策能力强，但全局结构弱。</strong></p>
+<p>于是出现另外一种思想：</p>
+<h1 id="Planning"><a href="#Planning" class="headerlink" title="Planning"></a>Planning</h1><p>先：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Plan</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">量子计算产业研究</span><br><span class="line"></span><br><span class="line">1. 技术路线</span><br><span class="line">2. 市场规模</span><br><span class="line">3. 主要公司</span><br><span class="line">4. 商业应用</span><br><span class="line">5. 投融资</span><br><span class="line">6. 技术瓶颈</span><br><span class="line">7. 未来趋势</span><br></pre></td></tr></table></figure>
+
+<p>然后：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Plan</span><br><span class="line"> ↓</span><br><span class="line">Task 1</span><br><span class="line"> ↓</span><br><span class="line">Task 2</span><br><span class="line"> ↓</span><br><span class="line">Task 3</span><br><span class="line"> ...</span><br></pre></td></tr></table></figure>
+
+<p>所以：</p>
+<blockquote>
+<p><strong>Planning 解决的不是“下一步做什么”，而是“为了完成 Goal，需要经过怎样的任务结构”。</strong></p>
+</blockquote>
+<p>这和 ReAct 的 Thought 是不同层次的问题。</p>
+<hr>
+<h1 id="五、这里第一次出现两个时间尺度"><a href="#五、这里第一次出现两个时间尺度" class="headerlink" title="五、这里第一次出现两个时间尺度"></a>五、这里第一次出现两个时间尺度</h1><p>这是非常值得理解的一点。</p>
+<p>ReAct 的 Decision 通常是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">现在做什么？</span><br></pre></td></tr></table></figure>
+
+<p>属于<strong>短时间尺度</strong>。</p>
+<p>Planning：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">整个任务怎么完成？</span><br></pre></td></tr></table></figure>
+
+<p>属于<strong>长时间尺度</strong>。</p>
+<p>于是现代 Agent 经常出现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">       Goal</span><br><span class="line">         ↓</span><br><span class="line">      Planner</span><br><span class="line">         ↓</span><br><span class="line">┌────────────────┐</span><br><span class="line">│      Plan      │</span><br><span class="line">│ T1 T2 T3 T4 T5 │</span><br><span class="line">└───────┬────────┘</span><br><span class="line">        ↓</span><br><span class="line">     Executor</span><br><span class="line">        ↓</span><br><span class="line">    Decision</span><br><span class="line">        ↓</span><br><span class="line">     Action</span><br></pre></td></tr></table></figure>
+
+<p>这里：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Planner</span><br><span class="line">= 战略层</span><br><span class="line"></span><br><span class="line">Decision</span><br><span class="line">= 战术层</span><br><span class="line"></span><br><span class="line">Action</span><br><span class="line">= 执行层</span><br></pre></td></tr></table></figure>
+
+<p>这个三层关系以后非常重要。</p>
+<hr>
+<h1 id="六、问题-4：LLM-可能选择“不允许”的-Action"><a href="#六、问题-4：LLM-可能选择“不允许”的-Action" class="headerlink" title="六、问题 4：LLM 可能选择“不允许”的 Action"></a>六、问题 4：LLM 可能选择“不允许”的 Action</h1><p>假设 Agent 有：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">send_email()</span><br><span class="line">delete_file()</span><br><span class="line">query_database()</span><br></pre></td></tr></table></figure>
+
+<p>用户说：</p>
+<blockquote>
+<p>帮我分析这些文件。</p>
+</blockquote>
+<p>LLM 某一步突然决定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Action:</span><br><span class="line">delete_file(...)</span><br></pre></td></tr></table></figure>
+
+<p>从推理角度，它可能觉得删除临时文件很合理。</p>
+<p>但是：</p>
+<blockquote>
+<p><strong>系统是否允许它删除文件？</strong></p>
+</blockquote>
+<p>这是另一个完全不同的问题。</p>
+<p>Decision 解决：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">我想做什么？</span><br></pre></td></tr></table></figure>
+
+<p>Policy 解决：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">你能不能这么做？</span><br></pre></td></tr></table></figure>
+
+<p>于是出现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Decision</span><br><span class="line">   ↓</span><br><span class="line">Proposed Action</span><br><span class="line">   ↓</span><br><span class="line">Policy / Guard</span><br><span class="line">   ↓</span><br><span class="line">Allowed?</span><br><span class="line">  /     \</span><br><span class="line">Yes     No</span><br><span class="line"> ↓       ↓</span><br><span class="line">Execute Reject</span><br></pre></td></tr></table></figure>
+
+<p>这也解释了你之前一直讨论的一个问题：</p>
+<blockquote>
+<p><strong>Policy 不应该和 Decision 混成一个东西。</strong></p>
+</blockquote>
+<p>Decision 可以提出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">delete_file</span><br></pre></td></tr></table></figure>
+
+<p>Policy Guard 可以回答：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DENY</span><br></pre></td></tr></table></figure>
+
+<p>它们承担不同责任。</p>
+<hr>
+<h1 id="七、问题-5：Agent-每次都会“重新思考”"><a href="#七、问题-5：Agent-每次都会“重新思考”" class="headerlink" title="七、问题 5：Agent 每次都会“重新思考”"></a>七、问题 5：Agent 每次都会“重新思考”</h1><p>假设 Agent 第一次遇到某网站：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">普通请求</span><br><span class="line"> ↓</span><br><span class="line">失败</span><br><span class="line"> ↓</span><br><span class="line">分析</span><br><span class="line"> ↓</span><br><span class="line">发现需要JS渲染</span><br><span class="line"> ↓</span><br><span class="line">切换浏览器</span><br><span class="line"> ↓</span><br><span class="line">成功</span><br></pre></td></tr></table></figure>
+
+<p>第二天再次遇到同一个网站：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">普通请求</span><br><span class="line"> ↓</span><br><span class="line">失败</span><br><span class="line"> ↓</span><br><span class="line">分析</span><br><span class="line"> ↓</span><br><span class="line">发现需要JS渲染</span><br><span class="line"> ↓</span><br><span class="line">切换浏览器</span><br><span class="line"> ↓</span><br><span class="line">成功</span><br></pre></td></tr></table></figure>
+
+<p>第三天：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">又来一遍……</span><br></pre></td></tr></table></figure>
+
+<p>这显然很浪费。</p>
+<p>于是出现一个自然的问题：</p>
+<blockquote>
+<p><strong>过去成功解决问题的经验，能不能留下来？</strong></p>
+</blockquote>
+<p>这就是 <strong>Memory</strong> 开始发挥作用的地方。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Memory:</span><br><span class="line"></span><br><span class="line">example.com</span><br><span class="line">→ requires_browser = true</span><br><span class="line">→ preferred_tool = playwright</span><br></pre></td></tr></table></figure>
+
+<p>下一次：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Goal</span><br><span class="line"> ↓</span><br><span class="line">Retrieve Memory</span><br><span class="line"> ↓</span><br><span class="line">直接使用 Browser</span><br></pre></td></tr></table></figure>
+
+<p>于是 Agent 从：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">每次重新推理</span><br></pre></td></tr></table></figure>
+
+<p>开始变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">经验</span><br><span class="line"> ↓</span><br><span class="line">保存</span><br><span class="line"> ↓</span><br><span class="line">检索</span><br><span class="line"> ↓</span><br><span class="line">影响未来决策</span><br></pre></td></tr></table></figure>
+
+<p>这才是 Memory 真正有价值的地方。</p>
+<hr>
+<h1 id="八、现在回头看-ReAct"><a href="#八、现在回头看-ReAct" class="headerlink" title="八、现在回头看 ReAct"></a>八、现在回头看 ReAct</h1><p>原始房子：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Thought</span><br><span class="line"> ↓</span><br><span class="line">Action</span><br><span class="line"> ↓</span><br><span class="line">Observation</span><br><span class="line"> ↺</span><br></pre></td></tr></table></figure>
+
+<p>我们只是认真问了几个工程问题：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Action 怎么可靠执行？</span><br><span class="line">→ Tool Schema</span><br><span class="line"></span><br><span class="line">历史越来越长怎么办？</span><br><span class="line">→ State</span><br><span class="line"></span><br><span class="line">复杂任务没有全局结构怎么办？</span><br><span class="line">→ Planning</span><br><span class="line"></span><br><span class="line">LLM想做危险/不允许的事情怎么办？</span><br><span class="line">→ Policy</span><br><span class="line"></span><br><span class="line">过去成功经验为什么不能复用？</span><br><span class="line">→ Memory</span><br></pre></td></tr></table></figure>
+
+<p>于是房子慢慢变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">                 Goal</span><br><span class="line">                  ↓</span><br><span class="line">               Planner</span><br><span class="line">                  ↓</span><br><span class="line">                 Plan</span><br><span class="line">                  ↓</span><br><span class="line">Memory ─────→ Context</span><br><span class="line">                  ↓</span><br><span class="line">                State</span><br><span class="line">                  ↓</span><br><span class="line">              Decision</span><br><span class="line">                  ↓</span><br><span class="line">          Proposed Action</span><br><span class="line">                  ↓</span><br><span class="line">            Policy Guard</span><br><span class="line">                  ↓</span><br><span class="line">             Tool Schema</span><br><span class="line">                  ↓</span><br><span class="line">                Tool</span><br><span class="line">                  ↓</span><br><span class="line">            Environment</span><br><span class="line">                  ↓</span><br><span class="line">             Observation</span><br><span class="line">                  ↓</span><br><span class="line">             State Update</span><br><span class="line">                  │</span><br><span class="line">                  └────→ Memory</span><br></pre></td></tr></table></figure>
+
+<p>你会发现：</p>
+<p><strong>现代 Agent 的复杂结构不是为了显得高级。</strong></p>
+<p>它基本上是：</p>
+<blockquote>
+<p><strong>ReAct 在真实工程环境中不断暴露问题，然后一个组件一个组件补出来的。</strong></p>
+</blockquote>
+<hr>
+<h1 id="九、但是这里还有一个非常大的问题"><a href="#九、但是这里还有一个非常大的问题" class="headerlink" title="九、但是这里还有一个非常大的问题"></a>九、但是这里还有一个非常大的问题</h1><p>到目前为止，我们默认：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Thought</span><br><span class="line">Decision</span><br><span class="line">Planning</span><br></pre></td></tr></table></figure>
+
+<p>主要都由 <strong>LLM</strong> 完成。</p>
+<p>但真的是这样吗？</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">retry_count &gt;= 3</span><br><span class="line">→ stop</span><br></pre></td></tr></table></figure>
+
+<p>需要 LLM 吗？</p>
+<p>显然不需要。</p>
+<p>再例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HTTP 429</span><br><span class="line">→ wait 60 seconds</span><br></pre></td></tr></table></figure>
+
+<p>需要 LLM 吗？</p>
+<p>可能也不需要。</p>
+<p>而：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">页面结构完全改变，</span><br><span class="line">应该修改 XPath，</span><br><span class="line">切换视觉解析，</span><br><span class="line">还是交给人工？</span><br></pre></td></tr></table></figure>
+
+<p>这里才可能真正需要 LLM。</p>
+<p>所以 ReAct 给我们留下了一个更深的问题：</p>
+<blockquote>
+<p><strong>Agent 中到底哪些 Decision 应该交给 LLM，哪些应该交给确定性程序？</strong></p>
+</blockquote>
+<p>这个问题非常重要，但我们先不回答。</p>
+<p>因为按照我们现在的学习方法，<strong>应该去看下一栋房子是怎么解决的。</strong></p>
+<hr>
+<h1 id="下一经典案例：Tool-Using-Agent"><a href="#下一经典案例：Tool-Using-Agent" class="headerlink" title="下一经典案例：Tool-Using Agent"></a>下一经典案例：Tool-Using Agent</h1><p>下一课我们离开 ReAct，开始拆第二个经典案例：</p>
+<p><strong>现代 Tool-Using Agent &#x2F; Function Calling Agent。</strong></p>
+<p>重点不是学习 API，而是看一个非常重要的演化：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ReAct</span><br><span class="line"></span><br><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">自然语言 Action</span><br><span class="line"> ↓</span><br><span class="line">解析</span><br><span class="line"> ↓</span><br><span class="line">执行</span><br></pre></td></tr></table></figure>
+
+<p>如何演化成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Modern Tool Agent</span><br><span class="line"></span><br><span class="line">LLM</span><br><span class="line"> ↓</span><br><span class="line">选择 Tool</span><br><span class="line"> ↓</span><br><span class="line">生成结构化 Arguments</span><br><span class="line"> ↓</span><br><span class="line">程序校验</span><br><span class="line"> ↓</span><br><span class="line">Tool Execution</span><br><span class="line"> ↓</span><br><span class="line">Tool Result</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
+
+<p>到时候我们会重点拆一个具体的 <strong>Tool Schema + Tool Selection + Tool Execution + Tool Result</strong> 完整运行过程。</p>
+<p>看完第二栋房子，你应该会真正理解 <strong>Tool、Action、Function Calling、Structured Output、Schema、Environment</strong> 这些概念之间到底是什么关系，而不是分别背它们的定义。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/29/day9-3/" data-id="cuid3dZwAvfx4NKLXAcebuT4C" data-title="Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-day8_2" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/09/18/day8_2/" class="article-date">
@@ -1125,6 +1542,303 @@
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-day6" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/15/day6/" class="article-date">
+  <time class="dt-published" datetime="2026-09-15T02:00:00.000Z" itemprop="datePublished">2026-09-15</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/15/day6/">Day6 - Agent 动作选择</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>很好，那我们就真正进入“Agent 为什么会选这个动作，而不是另一个动作”。</p>
+<p>这一步的核心是：<strong>Decision 不应该只是 if&#x2F;else，也不应该只是让 LLM“凭感觉选”。</strong> 更深层的 Agent 会把候选动作放到一个决策空间里比较。</p>
+<p>最基本可以写成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">选择 Action</span><br><span class="line">=</span><br><span class="line">比较每个 Action 的</span><br><span class="line">收益 - 成本 - 风险 + 信息价值</span><br></pre></td></tr></table></figure>
+
+<p>也就是一种 Utility：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Utility(Action)</span><br><span class="line">=</span><br><span class="line">Expected Benefit</span><br><span class="line">- Cost</span><br><span class="line">- Risk</span><br><span class="line">+ Information Gain</span><br></pre></td></tr></table></figure>
+
+<p>先用 XPath Repair Agent。</p>
+<p>当前状态是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Observation:</span><br><span class="line">XPath 返回 0 节点</span><br><span class="line"></span><br><span class="line">Belief:</span><br><span class="line">XPath失效概率          60%</span><br><span class="line">登录失效概率           20%</span><br><span class="line">页面动态加载失败概率    15%</span><br><span class="line">文章已删除概率           5%</span><br></pre></td></tr></table></figure>
+
+<p>现在 Agent 有 4 个动作：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">A1：直接让 LLM 生成新 XPath</span><br><span class="line">A2：用 Playwright 完整渲染页面</span><br><span class="line">A3：检查登录状态</span><br><span class="line">A4：直接人工介入</span><br></pre></td></tr></table></figure>
+
+<p>以前我们可能写：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> matched_nodes == <span class="number">0</span>:</span><br><span class="line">    generate_xpath()</span><br></pre></td></tr></table></figure>
+
+<p>但现在你应该问：</p>
+<blockquote>
+<p>为什么第一步一定是 generate_xpath？</p>
+</blockquote>
+<p>其实不一定。</p>
+<p>假设：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">A1 生成 XPath</span><br><span class="line">成本：10</span><br><span class="line">耗时：5秒</span><br><span class="line">如果真正原因是 XPath 失效，成功率很高</span><br><span class="line">否则基本白做</span><br><span class="line"></span><br><span class="line">A2 Playwright 渲染</span><br><span class="line">成本：3</span><br><span class="line">耗时：2秒</span><br><span class="line">不能直接解决问题</span><br><span class="line">但可以很好地区分：</span><br><span class="line">XPath问题 vs 动态加载问题</span><br><span class="line"></span><br><span class="line">A3 检查登录</span><br><span class="line">成本：1</span><br><span class="line">耗时：0.5秒</span><br><span class="line">只能确认登录问题</span><br><span class="line"></span><br><span class="line">A4 人工介入</span><br><span class="line">成本：100</span><br><span class="line">成功率：95%</span><br></pre></td></tr></table></figure>
+
+<p>这时候一个成熟 Agent 可能先选：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A3 → A2 → 再决定是否 A1</span><br></pre></td></tr></table></figure>
+
+<p>而不是直接 A1。</p>
+<p>原因是 A3&#x2F;A2 有很高的：</p>
+<p><strong>Information Gain</strong></p>
+<p>也就是：</p>
+<blockquote>
+<p>虽然它们不能直接完成任务，但能显著减少不确定性。</p>
+</blockquote>
+<p>这就是深层 Agent 决策里非常重要的概念。</p>
+<hr>
+<h2 id="1-Action-不只有“解决问题”的动作"><a href="#1-Action-不只有“解决问题”的动作" class="headerlink" title="1. Action 不只有“解决问题”的动作"></a>1. Action 不只有“解决问题”的动作</h2><p>你可以把 Action 分成两类。</p>
+<p>第一类：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exploit Action</span><br></pre></td></tr></table></figure>
+
+<p>直接解决问题。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">生成 XPath</span><br><span class="line">保存 XPath</span><br><span class="line">部署 XPath</span><br></pre></td></tr></table></figure>
+
+<p>第二类：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Explore / Information Action</span><br></pre></td></tr></table></figure>
+
+<p>获取更多信息。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">检查登录</span><br><span class="line">检查 DOM</span><br><span class="line">重新渲染页面</span><br><span class="line">获取截图</span><br><span class="line">查看网络请求</span><br></pre></td></tr></table></figure>
+
+<p>所以 Agent 实际上一直在平衡：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Exploration</span><br><span class="line">vs</span><br><span class="line">Exploitation</span><br></pre></td></tr></table></figure>
+
+<p>也就是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">继续调查？</span><br><span class="line">还是现在就采取解决动作？</span><br></pre></td></tr></table></figure>
+
+<p>这和强化学习里的 exploration&#x2F;exploitation 是同一个大思想。</p>
+<hr>
+<h2 id="2-Information-Gain-到底是什么"><a href="#2-Information-Gain-到底是什么" class="headerlink" title="2. Information Gain 到底是什么"></a>2. Information Gain 到底是什么</h2><p>假设 Agent 当前非常不确定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">XPath失效       50%</span><br><span class="line">动态加载失败    30%</span><br><span class="line">登录失效        20%</span><br></pre></td></tr></table></figure>
+
+<p>这时候不确定性很高。</p>
+<p>如果执行：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">check_login()</span><br></pre></td></tr></table></figure>
+
+<p>结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">login_status = valid</span><br></pre></td></tr></table></figure>
+
+<p>那么：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">登录失效 20% → 接近 0%</span><br></pre></td></tr></table></figure>
+
+<p>Agent 对世界的认识变得更确定。</p>
+<p>这就是信息增益。</p>
+<p>直觉上：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Information Gain</span><br><span class="line">=</span><br><span class="line">执行动作前的不确定性</span><br><span class="line">-</span><br><span class="line">执行动作后的不确定性</span><br></pre></td></tr></table></figure>
+
+<p>理论上常用 entropy 表达：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">H(State)</span><br><span class="line">=</span><br><span class="line">- Σ p(s) log p(s)</span><br></pre></td></tr></table></figure>
+
+<p>信息动作的价值：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">IG(Action)</span><br><span class="line">=</span><br><span class="line">H(before)</span><br><span class="line">-</span><br><span class="line">E[H(after)]</span><br></pre></td></tr></table></figure>
+
+<p>你不需要现在去算公式，但要理解本质：</p>
+<blockquote>
+<p>一个动作即使不能直接完成 Goal，只要能让后面的决策明显更准确，它就有价值。</p>
+</blockquote>
+<p>这件事对 Agent 非常重要。</p>
+<hr>
+<h2 id="3-Expected-Utility"><a href="#3-Expected-Utility" class="headerlink" title="3. Expected Utility"></a>3. Expected Utility</h2><p>再进一步，Agent 不能只考虑“成功率”。</p>
+<p>例如两个动作：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Action A</span><br><span class="line">成功率 90%</span><br><span class="line">成本 100</span><br><span class="line"></span><br><span class="line">Action B</span><br><span class="line">成功率 70%</span><br><span class="line">成本 5</span><br></pre></td></tr></table></figure>
+
+<p>是不是一定选择 A？</p>
+<p>不一定。</p>
+<p>假设任务价值只有 50。</p>
+<p>可以简单写：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Expected Utility</span><br><span class="line">=</span><br><span class="line">P(success) × Reward</span><br><span class="line">-</span><br><span class="line">Cost</span><br></pre></td></tr></table></figure>
+
+<p>如果 Reward &#x3D; 50：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">A:</span><br><span class="line">0.9 × 50 - 100</span><br><span class="line">= -55</span><br><span class="line"></span><br><span class="line">B:</span><br><span class="line">0.7 × 50 - 5</span><br><span class="line">= 30</span><br></pre></td></tr></table></figure>
+
+<p>反而应该选择 B。</p>
+<p>这说明：</p>
+<blockquote>
+<p><strong>成功率最高 ≠ 最优 Action。</strong></p>
+</blockquote>
+<p>真正优化的是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Expected Utility</span><br></pre></td></tr></table></figure>
+
+<p>这也是为什么生产 Agent 不能只让模型回答：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">“你觉得下一步最好做什么？”</span><br></pre></td></tr></table></figure>
+
+<p>因为“最好”必须先定义。</p>
+<hr>
+<h2 id="4-Risk-和-Cost-又不是一回事"><a href="#4-Risk-和-Cost-又不是一回事" class="headerlink" title="4. Risk 和 Cost 又不是一回事"></a>4. Risk 和 Cost 又不是一回事</h2><p>例如 XPath Agent 有两个动作：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">A：在测试环境部署</span><br><span class="line">B：直接生产部署</span><br></pre></td></tr></table></figure>
+
+<p>B 的成本可能更低：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">不用跑测试</span><br><span class="line">更快</span><br></pre></td></tr></table></figure>
+
+<p>但风险很高：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">错误XPath可能导致大量错误采集</span><br></pre></td></tr></table></figure>
+
+<p>因此：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Utility</span><br><span class="line">=</span><br><span class="line">Benefit</span><br><span class="line">- Cost</span><br><span class="line">- λ × Risk</span><br></pre></td></tr></table></figure>
+
+<p>这里 λ 表示：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">系统对风险有多敏感</span><br></pre></td></tr></table></figure>
+
+<p>例如金融 Agent、医疗 Agent：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">λ 很大</span><br></pre></td></tr></table></figure>
+
+<p>普通推荐 Agent：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">λ 可以小一些</span><br></pre></td></tr></table></figure>
+
+<p>所以 Policy 的更深层含义其实是：</p>
+<blockquote>
+<p><strong>Policy 不只是 if&#x2F;else，它可以表达系统的风险偏好和行为边界。</strong></p>
+</blockquote>
+<hr>
+<h2 id="5-Goal-也不能只是“一句话”"><a href="#5-Goal-也不能只是“一句话”" class="headerlink" title="5. Goal 也不能只是“一句话”"></a>5. Goal 也不能只是“一句话”</h2><p>我们以前写：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Goal:</span><br><span class="line">修复 XPath</span><br></pre></td></tr></table></figure>
+
+<p>这其实太粗。</p>
+<p>真实系统里通常应该拆成多个 objective：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Primary Goal:</span><br><span class="line">恢复正文采集</span><br><span class="line"></span><br><span class="line">Secondary Goals:</span><br><span class="line">尽量减少 LLM 调用</span><br><span class="line">尽量减少浏览器调用</span><br><span class="line">避免错误部署</span><br><span class="line">尽快恢复</span><br></pre></td></tr></table></figure>
+
+<p>于是 Agent 面临多目标优化：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Quality</span><br><span class="line">Cost</span><br><span class="line">Latency</span><br><span class="line">Risk</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Score</span><br><span class="line">=</span><br><span class="line">0.5 × Quality</span><br><span class="line">- 0.2 × Cost</span><br><span class="line">- 0.1 × Latency</span><br><span class="line">- 0.2 × Risk</span><br></pre></td></tr></table></figure>
+
+<p>这就开始进入真正的 Agent Policy 设计。</p>
+<hr>
+<h2 id="6-Planning-本质上就是比较“动作序列”"><a href="#6-Planning-本质上就是比较“动作序列”" class="headerlink" title="6. Planning 本质上就是比较“动作序列”"></a>6. Planning 本质上就是比较“动作序列”</h2><p>Decision 是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">现在下一步做什么？</span><br></pre></td></tr></table></figure>
+
+<p>Planning 是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">未来连续几步怎么走？</span><br></pre></td></tr></table></figure>
+
+<p>例如两个 Plan：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Plan A</span><br><span class="line"></span><br><span class="line">直接生成XPath</span><br><span class="line">→ 测试</span><br><span class="line">→ 部署</span><br></pre></td></tr></table></figure>
+
+<p>另一个：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Plan B</span><br><span class="line"></span><br><span class="line">检查登录</span><br><span class="line">→ 浏览器渲染</span><br><span class="line">→ 判断故障类型</span><br><span class="line">→ 生成XPath</span><br><span class="line">→ 测试</span><br><span class="line">→ 部署</span><br></pre></td></tr></table></figure>
+
+<p>Plan B 更长、更贵。</p>
+<p>但可能失败率低很多。</p>
+<p>所以真正的 Planning 是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">选择 Action Sequence</span><br><span class="line">使累计 Utility 最大</span><br></pre></td></tr></table></figure>
+
+<p>形式化一点：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Plan = [a1, a2, a3, ... an]</span><br></pre></td></tr></table></figure>
+
+<p>Agent 想找：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">argmax</span><br><span class="line">Σ future utility</span><br></pre></td></tr></table></figure>
+
+<p>这就是 planning 的核心。</p>
+<hr>
+<h2 id="7-为什么-Agent-需要预测"><a href="#7-为什么-Agent-需要预测" class="headerlink" title="7. 为什么 Agent 需要预测"></a>7. 为什么 Agent 需要预测</h2><p>为了比较：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">A1</span><br><span class="line">A2</span><br><span class="line">A3</span><br></pre></td></tr></table></figure>
+
+<p>Agent 必须知道：</p>
+<blockquote>
+<p>“如果我执行 A1，接下来可能发生什么？”</p>
+</blockquote>
+<p>这就是：</p>
+<p><strong>World Model &#x2F; Transition Model</strong></p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">当前 State</span><br><span class="line">+</span><br><span class="line">Action</span><br><span class="line">↓</span><br><span class="line">预测</span><br><span class="line">↓</span><br><span class="line">Next State</span><br></pre></td></tr></table></figure>
+
+<p>写成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">P(s&#x27; | s, a)</span><br></pre></td></tr></table></figure>
+
+<p>意思就是：</p>
+<blockquote>
+<p>当前处于状态 s，执行动作 a 后，进入状态 s’ 的概率。</p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">当前：</span><br><span class="line">怀疑XPath失效</span><br><span class="line"></span><br><span class="line">Action：</span><br><span class="line">重新生成XPath</span><br></pre></td></tr></table></figure>
+
+<p>预测：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">70% → 修复成功</span><br><span class="line">20% → XPath仍不准确</span><br><span class="line">10% → 原因根本不是XPath</span><br></pre></td></tr></table></figure>
+
+<p>于是 Agent 才能评估这个 Action 值不值得做。</p>
+<p>所以 Decision 背后其实隐含着：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">State</span><br><span class="line">↓</span><br><span class="line">候选 Action</span><br><span class="line">↓</span><br><span class="line">预测 Next State</span><br><span class="line">↓</span><br><span class="line">评估 Utility</span><br><span class="line">↓</span><br><span class="line">选择 Action</span><br></pre></td></tr></table></figure>
+
+<p>这一层非常关键。</p>
+<hr>
+<h2 id="8-LLM-在这里真正能做什么"><a href="#8-LLM-在这里真正能做什么" class="headerlink" title="8. LLM 在这里真正能做什么"></a>8. LLM 在这里真正能做什么</h2><p>现在再来看 LLM，就比之前清楚多了。</p>
+<p>LLM 可以帮助：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">生成候选 Action</span><br><span class="line">预测可能后果</span><br><span class="line">估计语义风险</span><br><span class="line">形成 Plan</span><br><span class="line">解释 Decision</span><br></pre></td></tr></table></figure>
+
+<p>但有些东西最好由程序计算：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">API调用成本</span><br><span class="line">剩余预算</span><br><span class="line">重试次数</span><br><span class="line">执行时间</span><br><span class="line">权限</span><br><span class="line">硬风险约束</span><br></pre></td></tr></table></figure>
+
+<p>所以更成熟的决策架构可能是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">       Current State</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">   Candidate Generator</span><br><span class="line">       （LLM）</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">   A1   A2   A3   A4</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">Outcome Prediction</span><br><span class="line">  LLM + Rules + Stats</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">    Utility Scoring</span><br><span class="line">       （代码）</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">     Policy Guard</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">       Best Action</span><br></pre></td></tr></table></figure>
+
+<p>这里你就能看到：</p>
+<blockquote>
+<p>LLM 不一定直接决定最终 Action。</p>
+</blockquote>
+<p>它可能只是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">提出候选方案</span><br></pre></td></tr></table></figure>
+
+<p>而系统真正的决策器负责：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">比较方案</span><br></pre></td></tr></table></figure>
+
+<p>这比：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">prompt → LLM → action</span><br></pre></td></tr></table></figure>
+
+<p>高一个层次。</p>
+<hr>
+<h2 id="9-放到你实际的数据采集系统里"><a href="#9-放到你实际的数据采集系统里" class="headerlink" title="9. 放到你实际的数据采集系统里"></a>9. 放到你实际的数据采集系统里</h2><p>比如某个目标 6 小时没新数据。</p>
+<p>Agent 当前有假设：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">H1：目标今天确实没有更新</span><br><span class="line">H2：XPath失效</span><br><span class="line">H3：账号失效</span><br><span class="line">H4：反爬</span><br><span class="line">H5：任务调度异常</span><br></pre></td></tr></table></figure>
+
+<p>Agent 可执行：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">A1：重新抓取一次</span><br><span class="line">A2：检查任务下发记录</span><br><span class="line">A3：检查登录账号</span><br><span class="line">A4：浏览器打开页面</span><br><span class="line">A5：生成新XPath</span><br></pre></td></tr></table></figure>
+
+<p>错误设计：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">没数据</span><br><span class="line">→ LLM生成XPath</span><br></pre></td></tr></table></figure>
+
+<p>成熟设计：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">没数据</span><br><span class="line">↓</span><br><span class="line">建立 Hypotheses</span><br><span class="line">↓</span><br><span class="line">计算哪个检查动作</span><br><span class="line">能以最低成本最大程度排除原因</span><br><span class="line">↓</span><br><span class="line">先执行那个动作</span><br><span class="line">↓</span><br><span class="line">更新 Belief State</span><br><span class="line">↓</span><br><span class="line">再选择下一动作</span><br></pre></td></tr></table></figure>
+
+<p>这已经开始接近真正的 autonomous troubleshooting agent 了。</p>
+<p>你现在可以把 Agent 的核心升级成这套理解：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Perception</span><br><span class="line">↓</span><br><span class="line">Belief State</span><br><span class="line">↓</span><br><span class="line">Candidate Actions</span><br><span class="line">↓</span><br><span class="line">Predict Outcomes</span><br><span class="line">↓</span><br><span class="line">Evaluate</span><br><span class="line">  ├─ Benefit</span><br><span class="line">  ├─ Cost</span><br><span class="line">  ├─ Risk</span><br><span class="line">  └─ Information Gain</span><br><span class="line">↓</span><br><span class="line">Choose Action</span><br><span class="line">↓</span><br><span class="line">Act</span><br><span class="line">↓</span><br><span class="line">Observe</span><br><span class="line">↓</span><br><span class="line">Update Belief</span><br></pre></td></tr></table></figure>
+
+<p>下一层我建议继续深入 <strong>Belief State 和 Hypothesis</strong>：Agent 在不知道真相时，怎样同时维护多个可能解释，而不是过早把 <code>status = XPATH_INVALID</code> 当成事实。这个概念会直接改变你以后设计故障诊断 Agent、数据治理 Agent 的方式。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/15/day6/" data-id="cuidU3OV75Vx35-akcHC3Viq-" data-title="Day6 - Agent 动作选择" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li></ul>
 
     </footer>
   </div>
@@ -2217,600 +2931,6 @@
 
 
   
-    <article id="post-day4 agent的8个层次" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/" class="article-date">
-  <time class="dt-published" datetime="2026-09-13T02:00:00.000Z" itemprop="datePublished">2026-09-13</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/">Day4 - Agent 的 8 个层次</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>对，你现在问到了一个比“怎么写 Decision Rule”更根本的问题：<strong>Agent 中这些东西到底分别负责什么，以及它们之间是什么关系。</strong></p>
-<p>而且你对 <code>batch_id</code> 的判断方向基本对，但我会修正一点：<strong>“用于过滤”本身不能很好地区分 DATE 和 IDENTIFIER</strong>。ID 同样经常用于过滤。更关键的是“这个字段在业务中代表什么”，以及操作是否体现这种语义。</p>
-<p>先把整体模型建立起来。</p>
-<h2 id="一、先纠正一个概念：Skill-不等于-Prompt"><a href="#一、先纠正一个概念：Skill-不等于-Prompt" class="headerlink" title="一、先纠正一个概念：Skill 不等于 Prompt"></a>一、先纠正一个概念：Skill 不等于 Prompt</h2><p>前面为了教学我把它简化了。更准确地说：</p>
-<blockquote>
-<p><strong>Prompt 是 Skill 的一个组成部分，而不是 Skill 本身。</strong></p>
-</blockquote>
-<p>我建议你脑中建立下面这个层级：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── Context</span><br><span class="line">│</span><br><span class="line">├── Workflow / Orchestration</span><br><span class="line">│</span><br><span class="line">│</span><br><span class="line">├── Skill A：字段分类</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Taxonomy</span><br><span class="line">│   ├── Decision Policy</span><br><span class="line">│   ├── Few-shot Examples</span><br><span class="line">│   ├── Output Schema</span><br><span class="line">│   └── Eval Cases</span><br><span class="line">│</span><br><span class="line">├── Skill B：异常检测</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Rules / Knowledge</span><br><span class="line">│   ├── Few-shot</span><br><span class="line">│   ├── Output Schema</span><br><span class="line">│   └── Eval Cases</span><br><span class="line">│</span><br><span class="line">└── Tools</span><br><span class="line">    ├── profile_column()</span><br><span class="line">    ├── validate_date()</span><br><span class="line">    ├── calculate_unique_ratio()</span><br><span class="line">    ├── execute_duckdb()</span><br><span class="line">    └── execute_polars()</span><br></pre></td></tr></table></figure>
-
-<p>当然，不是每个 Skill 都必须机械地包含这六项。简单 Skill 可能只有 Prompt + Tool；复杂 Skill 才需要完整体系。</p>
-<hr>
-<h1 id="二、8-个概念到底分别解决什么问题？"><a href="#二、8-个概念到底分别解决什么问题？" class="headerlink" title="二、8 个概念到底分别解决什么问题？"></a>二、8 个概念到底分别解决什么问题？</h1><p>可以用一句话分别记住。</p>
-<table>
-<thead>
-<tr>
-<th>概念</th>
-<th>它回答的问题</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Prompt</strong></td>
-<td>我要模型现在做什么？</td>
-</tr>
-<tr>
-<td><strong>Context</strong></td>
-<td>模型这一次做判断时知道什么？</td>
-</tr>
-<tr>
-<td><strong>Taxonomy</strong></td>
-<td>有哪些合法的概念&#x2F;类别？</td>
-</tr>
-<tr>
-<td><strong>Decision Policy</strong></td>
-<td>根据已有信息，应该怎么做决定？</td>
-</tr>
-<tr>
-<td><strong>Few-shot</strong></td>
-<td>给模型看几个“应该怎么判断”的示范</td>
-</tr>
-<tr>
-<td><strong>Tool</strong></td>
-<td>哪些事情不要让 LLM 猜，而是实际计算&#x2F;执行？</td>
-</tr>
-<tr>
-<td><strong>Workflow</strong></td>
-<td>先做什么、后做什么、什么时候调用谁？</td>
-</tr>
-<tr>
-<td><strong>Eval</strong></td>
-<td>整套东西到底做得好不好？修改后有没有变差？</td>
-</tr>
-</tbody></table>
-<p>这八个概念看起来很像，但职责其实非常不同。</p>
-<hr>
-<h1 id="三、Prompt：任务说明书"><a href="#三、Prompt：任务说明书" class="headerlink" title="三、Prompt：任务说明书"></a>三、Prompt：任务说明书</h1><p>Prompt 最核心的作用是：</p>
-<blockquote>
-<p><strong>告诉模型它当前承担什么任务，以及如何使用提供给它的信息。</strong></p>
-</blockquote>
-<p>例如：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">你是字段分类器。</span><br><span class="line"></span><br><span class="line">根据 column_name、samples、statistics 和 business_context，</span><br><span class="line">判断字段 semantic_type。</span><br><span class="line"></span><br><span class="line">必须从 available_categories 中选择。</span><br><span class="line">证据不足时返回 UNKNOWN。</span><br><span class="line"></span><br><span class="line">按照 Decision Policy 进行判断。</span><br></pre></td></tr></table></figure>
-
-<p>Prompt 本身最好不要承担所有领域知识。</p>
-<p>不要最后变成：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">你是字段分类器……</span><br><span class="line">如果id……</span><br><span class="line">如果date……</span><br><span class="line">如果phone……</span><br><span class="line">如果address……</span><br><span class="line">……</span><br><span class="line">5000行</span><br></pre></td></tr></table></figure>
-
-<p>否则所有东西耦合在一起。</p>
-<p>所以你可以把 Prompt 理解成：</p>
-<blockquote>
-<p><strong>Skill 的操作说明 &#x2F; instruction layer。</strong></p>
-</blockquote>
-<hr>
-<h1 id="四、Context：这一次-Agent-知道什么"><a href="#四、Context：这一次-Agent-知道什么" class="headerlink" title="四、Context：这一次 Agent 知道什么"></a>四、Context：这一次 Agent 知道什么</h1><p>这个概念非常重要。</p>
-<p>例如只有：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">batch_id</span><br><span class="line">[&quot;20260101&quot;, &quot;20260102&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>模型很难判断。</p>
-<p>如果 Context 增加：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">table_name:</span><br><span class="line">production_batch</span><br><span class="line"></span><br><span class="line">table_description:</span><br><span class="line">每日生产批次记录</span><br><span class="line"></span><br><span class="line">column_description:</span><br><span class="line">生产批次编号</span><br><span class="line"></span><br><span class="line">usage:</span><br><span class="line">与 production_result.batch_id 进行关联</span><br></pre></td></tr></table></figure>
-
-<p>判断突然变得容易。</p>
-<p>所以：</p>
-<blockquote>
-<p><strong>Prompt 决定“怎么想”；Context 决定“拿什么信息想”。</strong></p>
-</blockquote>
-<p>这是一个非常值得记住的区别。</p>
-<p>很多所谓“Prompt 问题”，其实根本不是 Prompt 问题，而是：</p>
-<blockquote>
-<p><strong>Context 不够。</strong></p>
-</blockquote>
-<p>再厉害的 Prompt，也不能稳定推断系统根本没提供的信息。</p>
-<hr>
-<h1 id="五、Taxonomy：规定“世界里有哪些东西”"><a href="#五、Taxonomy：规定“世界里有哪些东西”" class="headerlink" title="五、Taxonomy：规定“世界里有哪些东西”"></a>五、Taxonomy：规定“世界里有哪些东西”</h1><p>例如：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">available_categories:</span><br><span class="line"></span><br><span class="line">IDENTIFIER</span><br><span class="line">NUMBER</span><br><span class="line">DATE</span><br><span class="line">DATETIME</span><br><span class="line">PHONE</span><br><span class="line">EMAIL</span><br><span class="line">ADDRESS</span><br><span class="line">PERSON_NAME</span><br><span class="line">TEXT</span><br><span class="line">UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>这只是第一层。</p>
-<p>真正好的 Taxonomy 还应该定义：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER 是什么？</span><br><span class="line">NUMBER 是什么？</span><br><span class="line">DATE 是什么？</span><br><span class="line"></span><br><span class="line">IDENTIFIER 和 NUMBER 的边界是什么？</span><br><span class="line">DATE 和 DATETIME 的边界是什么？</span><br><span class="line">TEXT 和 UNKNOWN 有什么区别？</span><br></pre></td></tr></table></figure>
-
-<p>所以：</p>
-<blockquote>
-<p><strong>Taxonomy 管的是概念空间。</strong></p>
-</blockquote>
-<p>它不主要负责：</p>
-<blockquote>
-<p>“这一次 batch_id 应该选哪个？”</p>
-</blockquote>
-<p>后者是 Decision Policy 的事情。</p>
-<hr>
-<h1 id="六、Decision-Policy：规定怎么使用证据做决定"><a href="#六、Decision-Policy：规定怎么使用证据做决定" class="headerlink" title="六、Decision Policy：规定怎么使用证据做决定"></a>六、Decision Policy：规定怎么使用证据做决定</h1><p>例如：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">优先判断 semantic role。</span><br><span class="line"></span><br><span class="line">格式只能作为支持证据，</span><br><span class="line">不得仅根据格式决定 semantic_type。</span><br><span class="line"></span><br><span class="line">存在明确业务描述时，</span><br><span class="line">业务语义证据优先于表面格式。</span><br><span class="line"></span><br><span class="line">存在强冲突且无法消解时，</span><br><span class="line">返回 UNKNOWN。</span><br></pre></td></tr></table></figure>
-
-<p>这就是 Policy。</p>
-<p>所以：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Taxonomy</span><br><span class="line">    ↓</span><br><span class="line">定义 IDENTIFIER 是什么</span><br><span class="line"></span><br><span class="line">Decision Policy</span><br><span class="line">    ↓</span><br><span class="line">规定什么时候应该选择 IDENTIFIER</span><br></pre></td></tr></table></figure>
-
-<p>两者千万不要混。</p>
-<hr>
-<h1 id="七、Few-shot：不是规则，而是“案例教学”"><a href="#七、Few-shot：不是规则，而是“案例教学”" class="headerlink" title="七、Few-shot：不是规则，而是“案例教学”"></a>七、Few-shot：不是规则，而是“案例教学”</h1><p>假设 Policy 写了：</p>
-<blockquote>
-<p>明确业务语义优先于表面格式。</p>
-</blockquote>
-<p>LLM 可能还是理解得不稳定。</p>
-<p>你给一个 example：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Input:</span><br><span class="line">column_name = batch_id</span><br><span class="line">samples = [&quot;20260101&quot;,&quot;20260102&quot;]</span><br><span class="line">business_context = &quot;每日生产批次编号&quot;</span><br><span class="line"></span><br><span class="line">Output:</span><br><span class="line">IDENTIFIER</span><br><span class="line"></span><br><span class="line">Reason:</span><br><span class="line">YYYYMMDD 是存储格式；</span><br><span class="line">字段实际承担生产批次标识作用。</span><br></pre></td></tr></table></figure>
-
-<p>这就是 Few-shot。</p>
-<p>它的价值是：</p>
-<blockquote>
-<p><strong>把抽象 Policy 变成具体行为示范。</strong></p>
-</blockquote>
-<p>因此：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Policy:</span><br><span class="line">告诉模型原则</span><br><span class="line"></span><br><span class="line">Few-shot:</span><br><span class="line">告诉模型这个原则在具体案例里长什么样</span><br></pre></td></tr></table></figure>
-
-<p>这两个也不能混。</p>
-<hr>
-<h1 id="八、Tool：不要让-LLM-做它不擅长的事情"><a href="#八、Tool：不要让-LLM-做它不擅长的事情" class="headerlink" title="八、Tool：不要让 LLM 做它不擅长的事情"></a>八、Tool：不要让 LLM 做它不擅长的事情</h1><p>比如你有 100 万行 CSV。</p>
-<p>不要：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LLM，请判断这一列有多少 distinct values。</span><br></pre></td></tr></table></figure>
-
-<p>应该：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">DuckDB / Polars</span><br><span class="line">      ↓</span><br><span class="line">profile_column()</span><br><span class="line">      ↓</span><br><span class="line">&#123;</span><br><span class="line">  &quot;row_count&quot;: 1000000,</span><br><span class="line">  &quot;distinct_count&quot;: 365,</span><br><span class="line">  &quot;null_ratio&quot;: 0.001,</span><br><span class="line">  &quot;min&quot;: ...,</span><br><span class="line">  &quot;max&quot;: ...</span><br><span class="line">&#125;</span><br><span class="line">      ↓</span><br><span class="line">LLM</span><br></pre></td></tr></table></figure>
-
-<p>所以 Tool 的核心原则可以记成：</p>
-<blockquote>
-<p><strong>能确定性计算、查询、验证、转换、执行的事情，优先 Tool。</strong></p>
-</blockquote>
-<p>LLM 更适合：</p>
-<blockquote>
-<p>理解、分类、解释、规划、处理模糊语义。</p>
-</blockquote>
-<p>这正好对应你现在 CSV Agent 里 DuckDB &#x2F; Polars 的定位。</p>
-<hr>
-<h1 id="九、Workflow：把所有能力组织起来"><a href="#九、Workflow：把所有能力组织起来" class="headerlink" title="九、Workflow：把所有能力组织起来"></a>九、Workflow：把所有能力组织起来</h1><p>这是你作为 Agent 架构师尤其应该关注的地方。</p>
-<p>比如字段分类不是直接：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CSV → LLM</span><br></pre></td></tr></table></figure>
-
-<p>而可能是：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">CSV</span><br><span class="line"> ↓</span><br><span class="line">读取 schema</span><br><span class="line"> ↓</span><br><span class="line">Polars / DuckDB profiling</span><br><span class="line"> ↓</span><br><span class="line">获取 table / business context</span><br><span class="line"> ↓</span><br><span class="line">Field Classification Skill</span><br><span class="line"> ↓</span><br><span class="line">confidence 足够？</span><br><span class="line"> ├─ YES → 输出</span><br><span class="line"> │</span><br><span class="line"> └─ NO</span><br><span class="line">     ↓</span><br><span class="line"> 获取更多 context / 调用其他 Tool</span><br><span class="line">     ↓</span><br><span class="line"> 再判断</span><br><span class="line">     ↓</span><br><span class="line"> 仍然不够</span><br><span class="line">     ↓</span><br><span class="line"> UNKNOWN / 人工确认</span><br></pre></td></tr></table></figure>
-
-<p>这整个过程就是 Workflow。</p>
-<p>所以：</p>
-<blockquote>
-<p><strong>Skill 是能力；Workflow 是能力之间如何协作。</strong></p>
-</blockquote>
-<hr>
-<h1 id="十、Eval：Agent-的单元测试-回归测试"><a href="#十、Eval：Agent-的单元测试-回归测试" class="headerlink" title="十、Eval：Agent 的单元测试 + 回归测试"></a>十、Eval：Agent 的单元测试 + 回归测试</h1><p>这个概念对你刚才说的：</p>
-<blockquote>
-<p>“先做简单规则，在实际应用中不断完善。”</p>
-</blockquote>
-<p>至关重要。</p>
-<p>假设 v1：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">batch_id → DATE</span><br></pre></td></tr></table></figure>
-
-<p>专家纠正：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">batch_id → IDENTIFIER</span><br></pre></td></tr></table></figure>
-
-<p>你修改 Policy。</p>
-<p>如果没有 Eval，你只能知道：</p>
-<blockquote>
-<p>batch_id 修好了。</p>
-</blockquote>
-<p>但不知道是不是把另外 100 个 DATE 搞错了。</p>
-<p>所以要把失败案例加入：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Eval Dataset</span><br><span class="line"></span><br><span class="line">case_001 → expected DATE</span><br><span class="line">case_002 → expected NUMBER</span><br><span class="line">case_003 → expected IDENTIFIER</span><br><span class="line">...</span><br><span class="line">case_137 → batch_id → IDENTIFIER</span><br></pre></td></tr></table></figure>
-
-<p>修改以后重新运行：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">v1 accuracy = 91.2%</span><br><span class="line"></span><br><span class="line">修改 Policy</span><br><span class="line"></span><br><span class="line">v2 accuracy = 93.1%</span><br><span class="line"></span><br><span class="line">但是：</span><br><span class="line">DATE recall</span><br><span class="line">96% → 81%</span><br><span class="line"></span><br><span class="line">⚠️ regression</span><br></pre></td></tr></table></figure>
-
-<p>这时候你就知道修改方式有问题。</p>
-<p>所以：</p>
-<blockquote>
-<p><strong>没有 Eval，“持续迭代”很容易变成“持续打补丁”。</strong></p>
-</blockquote>
-<hr>
-<h1 id="十一、现在回头看你的-batch-id-答案"><a href="#十一、现在回头看你的-batch-id-答案" class="headerlink" title="十一、现在回头看你的 batch_id 答案"></a>十一、现在回头看你的 batch_id 答案</h1><p>你认为应该修改：</p>
-<blockquote>
-<p><strong>Context + Decision Policy</strong></p>
-</blockquote>
-<p>总体判断很好。</p>
-<h3 id="Context：对"><a href="#Context：对" class="headerlink" title="Context：对"></a>Context：对</h3><p>你提出应该增加：</p>
-<blockquote>
-<p>字段所在表的信息、存放什么内容、batch_id 用于什么。</p>
-</blockquote>
-<p>完全正确。</p>
-<p>我甚至建议以后 Context 分层：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Column Context</span><br><span class="line">- column_name</span><br><span class="line">- samples</span><br><span class="line">- statistics</span><br><span class="line"></span><br><span class="line">Table Context</span><br><span class="line">- table_name</span><br><span class="line">- table_description</span><br><span class="line">- related_columns</span><br><span class="line"></span><br><span class="line">Business Context</span><br><span class="line">- column_description</span><br><span class="line">- business meaning</span><br><span class="line">- usage</span><br><span class="line"></span><br><span class="line">Relationship Context</span><br><span class="line">- foreign key</span><br><span class="line">- referenced tables</span><br><span class="line">- downstream usage</span><br></pre></td></tr></table></figure>
-
-<p>这样 Skill 不需要靠猜。</p>
-<h3 id="Decision-Policy：也对，但你的具体规则还可以修一下"><a href="#Decision-Policy：也对，但你的具体规则还可以修一下" class="headerlink" title="Decision Policy：也对，但你的具体规则还可以修一下"></a>Decision Policy：也对，但你的具体规则还可以修一下</h3><p>你说：</p>
-<blockquote>
-<p>用于过滤，例如早于某日、晚于某日 → 倾向 DATE。</p>
-</blockquote>
-<p>这个很好，因为 <code>before/after</code> 表达了 temporal semantics。</p>
-<p>但是：</p>
-<blockquote>
-<p>用于过滤 → DATE</p>
-</blockquote>
-<p>不成立，因为：</p>
-<figure class="highlight sql"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">WHERE</span> user_id <span class="operator">=</span> <span class="number">10001</span></span><br></pre></td></tr></table></figure>
-
-<p>也是过滤。</p>
-<p>所以不是“是否过滤”，而是：</p>
-<blockquote>
-<p><strong>操作本身体现了什么语义。</strong></p>
-</blockquote>
-<p>例如：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">before / after / date range</span><br><span class="line">→ temporal semantics</span><br><span class="line">→ DATE evidence</span><br><span class="line"></span><br><span class="line">SUM / AVG / difference / quantity comparison</span><br><span class="line">→ quantitative semantics</span><br><span class="line">→ NUMBER evidence</span><br><span class="line"></span><br><span class="line">join / lookup / reference / equality matching</span><br><span class="line">→ identity semantics</span><br><span class="line">→ IDENTIFIER evidence</span><br></pre></td></tr></table></figure>
-
-<p>你另外说：</p>
-<blockquote>
-<p>“用于计算某个批次的达标率 → 倾向批次”</p>
-</blockquote>
-<p>这里也需要注意。</p>
-<p>如果：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GROUP BY batch_id</span><br><span class="line">计算每个 batch 的达标率</span><br></pre></td></tr></table></figure>
-
-<p><code>batch_id</code> 的作用其实是：</p>
-<blockquote>
-<p><strong>分组维度 &#x2F; entity identity</strong></p>
-</blockquote>
-<p>所以支持 IDENTIFIER。</p>
-<p>不是因为“计算达标率”，而是因为：</p>
-<blockquote>
-<p><strong>batch_id 用来区分不同批次，达标率才是被计算出来的 NUMBER。</strong></p>
-</blockquote>
-<p>这个区别非常重要。</p>
-<hr>
-<h1 id="十二、把这-8-个概念放进一个-Agent，你就清楚了"><a href="#十二、把这-8-个概念放进一个-Agent，你就清楚了" class="headerlink" title="十二、把这 8 个概念放进一个 Agent，你就清楚了"></a>十二、把这 8 个概念放进一个 Agent，你就清楚了</h1><p>最终可以形成：</p>
-<figure class="highlight text"><figcaption><span>id</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">                  Agent</span><br><span class="line">                    │</span><br><span class="line">              ┌─────┴─────┐</span><br><span class="line">              │ Workflow  │</span><br><span class="line">              └─────┬─────┘</span><br><span class="line">                    │</span><br><span class="line">       ┌────────────┼────────────┐</span><br><span class="line">       ↓            ↓            ↓</span><br><span class="line">     Skill A      Skill B      Skill C</span><br><span class="line">   字段分类       异常检测      清洗规划</span><br><span class="line">       │</span><br><span class="line"> ┌─────┼─────────────────┐</span><br><span class="line"> ↓     ↓        ↓        ↓</span><br><span class="line">Prompt Taxonomy Policy Few-shot</span><br><span class="line"> │</span><br><span class="line"> ↓</span><br><span class="line">Context ←──── Workflow 动态准备</span><br><span class="line"> │</span><br><span class="line"> ↓</span><br><span class="line">LLM</span><br><span class="line"> │</span><br><span class="line"> ├────需要确定性信息────→ Tools</span><br><span class="line"> │                         ↓</span><br><span class="line"> │                   DuckDB / Polars</span><br><span class="line"> │                         │</span><br><span class="line"> └────────结果─────────────┘</span><br><span class="line">              ↓</span><br><span class="line">         Output Schema</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">系统外部还有一层：</span><br><span class="line"></span><br><span class="line">             Eval</span><br><span class="line">              ↑</span><br><span class="line">      测整个 Skill / Agent</span><br><span class="line">              ↑</span><br><span class="line">        真实失败案例</span><br><span class="line">              ↑</span><br><span class="line">          专家反馈</span><br></pre></td></tr></table></figure>
-
-<p>你可以把它压缩成一句非常适合 Agent 架构设计的口诀：</p>
-<blockquote>
-<p><strong>Prompt 定任务，Context 给信息，Taxonomy 定概念，Policy 定决策，Few-shot 做示范，Tool 做确定性工作，Workflow 管流程，Eval 管进化。</strong></p>
-</blockquote>
-<p>有了这张地图之后，我们再做 <strong>Failure Decomposition</strong> 就有意义了。因为以后看到一个 Agent 错误，你不应该第一反应“改 Prompt”，而应该先定位：<strong>到底是这八层中的哪一层出了问题。</strong></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/13/day4%20agent%E7%9A%848%E4%B8%AA%E5%B1%82%E6%AC%A1/" data-id="cuidNnEyxxULO8u6Z3APKGuOS" data-title="Day4 - Agent 的 8 个层次" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-day3-blog" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/11/day3-blog/" class="article-date">
-  <time class="dt-published" datetime="2026-09-11T14:09:01.000Z" itemprop="datePublished">2026-09-11</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/09/11/day3-blog/">Day3 - Decision Rule 设计</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>是的，<strong>练习量有影响，但更主要是思维模式还停留在“分类”而不是“规则设计”</strong>。从你前面的回答看，这个现象很典型，而且是正常的学习阶段。</p>
-<p>你现在脑中的判断大概是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">看到字段</span><br><span class="line">  ↓</span><br><span class="line">寻找最强证据</span><br><span class="line">  ↓</span><br><span class="line">有强证据 → 分类</span><br><span class="line">没强证据 → UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>所以当让你写 Decision Rule 时，自然会觉得：</p>
-<blockquote>
-<p>“还能写什么？不就是有强证据，而且没有冲突，就输出吗？”</p>
-</blockquote>
-<p>这句话在<strong>抽象层面其实没错</strong>。问题是，它没有回答生产系统真正需要解决的几个问题。</p>
-<h3 id="你缺的不是更多“规则”，而是把抽象词继续往下拆"><a href="#你缺的不是更多“规则”，而是把抽象词继续往下拆" class="headerlink" title="你缺的不是更多“规则”，而是把抽象词继续往下拆"></a>你缺的不是更多“规则”，而是把抽象词继续往下拆</h3><p>比如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">IF 有强证据支持 NUMBER</span><br><span class="line">THEN NUMBER</span><br></pre></td></tr></table></figure>
-
-<p>这里偷偷藏了至少 5 个没有定义的问题：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">什么叫“强”？</span><br><span class="line">什么叫“支持”？</span><br><span class="line">哪些来源的证据可信？</span><br><span class="line">两个证据冲突怎么办？</span><br><span class="line">多少脏数据可以容忍？</span><br></pre></td></tr></table></figure>
-
-<p>如果这些都没定义，那么实际上你只是把：</p>
-<blockquote>
-<p>“判断是不是 NUMBER”</p>
-</blockquote>
-<p>换成了：</p>
-<blockquote>
-<p>“判断有没有强证据说明它是 NUMBER”</p>
-</blockquote>
-<p><strong>问题并没有真正被解决，只是换了一个说法。</strong></p>
-<p>这就是你现在写不出东西的最主要原因。</p>
-<hr>
-<h3 id="一个非常实用的训练方法：不断攻击抽象词"><a href="#一个非常实用的训练方法：不断攻击抽象词" class="headerlink" title="一个非常实用的训练方法：不断攻击抽象词"></a>一个非常实用的训练方法：不断攻击抽象词</h3><p>以后你一旦写出：</p>
-<blockquote>
-<p>“如果有强证据……”</p>
-</blockquote>
-<p>马上问自己：</p>
-<blockquote>
-<p><strong>什么情况下算强证据？</strong></p>
-</blockquote>
-<p>比如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">column_name = price</span><br></pre></td></tr></table></figure>
-
-<p>强不强？</p>
-<p>通常比较强。</p>
-<p>继续攻击：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">price = [&quot;Tom&quot;, &quot;Jerry&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>还强吗？</p>
-<p>这时候就出现了：</p>
-<blockquote>
-<p>semantic evidence 很强，但 structural contradiction 也很强。</p>
-</blockquote>
-<p>继续：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">price = [&quot;100&quot;, &quot;200&quot;, &quot;abc&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>怎么办？</p>
-<p>这又逼出了：</p>
-<blockquote>
-<p>semantic conflict 和 dirty value 要区分。</p>
-</blockquote>
-<p>继续：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">price = [&quot;001&quot;, &quot;002&quot;, &quot;003&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>怎么办？</p>
-<p>又逼出了：</p>
-<blockquote>
-<p>storage format 和 semantic type 要分离。</p>
-</blockquote>
-<p>你会发现，<strong>Decision Rule 不是坐在那里凭空“想”出来的，而是被反例逼出来的。</strong></p>
-<p>这也是为什么你觉得“没东西可写”：目前你的大脑主要在寻找<strong>正例规律</strong>，还没有形成主动寻找<strong>反例、边界和失败模式</strong>的习惯。</p>
-<hr>
-<h2 id="你目前还有第二个思维倾向：Feature-→-Category"><a href="#你目前还有第二个思维倾向：Feature-→-Category" class="headerlink" title="你目前还有第二个思维倾向：Feature → Category"></a>你目前还有第二个思维倾向：Feature → Category</h2><p>你前几轮经常自然想到：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">长度一致 → ID</span><br><span class="line">unique ratio 高 → ID</span><br><span class="line">都是数字 → NUMBER</span><br><span class="line">11 位 → PHONE</span><br><span class="line">YYYYMMDD → DATE</span><br></pre></td></tr></table></figure>
-
-<p>这是典型的 <strong>feature-driven thinking</strong>。</p>
-<p>它特别容易写规则，因为：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IF 11位数字 → PHONE</span><br></pre></td></tr></table></figure>
-
-<p>很具体。</p>
-<p>但我们这两关一直在把你往另一个方向推：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Feature</span><br><span class="line">   ↓</span><br><span class="line">Evidence</span><br><span class="line">   ↓</span><br><span class="line">Semantic hypothesis</span><br><span class="line">   ↓</span><br><span class="line">Competing hypotheses</span><br><span class="line">   ↓</span><br><span class="line">Contradiction</span><br><span class="line">   ↓</span><br><span class="line">Decision</span><br></pre></td></tr></table></figure>
-
-<p>也就是说：</p>
-<blockquote>
-<p><strong>Feature 本身不是结论，它只是证据。</strong></p>
-</blockquote>
-<p>这是一次思维模式转换，所以你暂时会觉得 Decision Rule 变得“空”了。</p>
-<p>其实这是好现象：你已经意识到那些简单规则不可靠，但新的决策框架还没有完全建立起来。</p>
-<hr>
-<h2 id="第三个原因：你还不习惯从“失败条件”设计系统"><a href="#第三个原因：你还不习惯从“失败条件”设计系统" class="headerlink" title="第三个原因：你还不习惯从“失败条件”设计系统"></a>第三个原因：你还不习惯从“失败条件”设计系统</h2><p>你现在比较自然的问题是：</p>
-<blockquote>
-<p>什么情况下我应该判断 NUMBER？</p>
-</blockquote>
-<p>生产规则设计更应该同时问四个问题：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">① 什么情况下应该判 NUMBER？</span><br><span class="line"></span><br><span class="line">② 什么情况下绝对不能判 NUMBER？</span><br><span class="line"></span><br><span class="line">③ 什么情况下 NUMBER 和另一个类别都说得通？</span><br><span class="line"></span><br><span class="line">④ 什么情况下信息不足，我应该拒绝判断？</span><br></pre></td></tr></table></figure>
-
-<p>举个例子。</p>
-<p>一开始：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">NUMBER:</span><br><span class="line">有数量语义 → NUMBER</span><br></pre></td></tr></table></figure>
-
-<p>攻击：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column = price</span><br><span class="line">samples = [&quot;Tom&quot;, &quot;Jerry&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>于是增加：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AND values compatible with numeric</span><br></pre></td></tr></table></figure>
-
-<p>再攻击：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column = value</span><br><span class="line">samples = [&quot;10&quot;,&quot;20&quot;,&quot;30&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>于是增加：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">必须存在明确 quantitative semantics</span><br></pre></td></tr></table></figure>
-
-<p>再攻击：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column = price</span><br><span class="line">samples = [&quot;100&quot;,&quot;200&quot;,&quot;abc&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>不能 UNKNOWN，因为只是少量脏数据。</p>
-<p>于是增加：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">numeric compatibility 应允许一定比例异常</span><br></pre></td></tr></table></figure>
-
-<p>再攻击：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column = batch_id</span><br><span class="line">samples = [&quot;20260101&quot;...]</span><br></pre></td></tr></table></figure>
-
-<p>于是增加：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">不得存在更强的 identifier semantics</span><br></pre></td></tr></table></figure>
-
-<p>最后规则自然就长出来了：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">NUMBER</span><br><span class="line"></span><br><span class="line">IF</span><br><span class="line">  有明确 quantitative semantics</span><br><span class="line">AND</span><br><span class="line">  大多数有效值与 numeric 兼容</span><br><span class="line">AND</span><br><span class="line">  算术/度量操作具有业务意义</span><br><span class="line">AND</span><br><span class="line">  不存在更强的 identifier/date semantic evidence</span><br><span class="line">AND</span><br><span class="line">  不一致值可以合理解释为 data-quality anomalies</span><br><span class="line">THEN</span><br><span class="line">  NUMBER</span><br><span class="line">ELSE</span><br><span class="line">  evaluate competing categories / UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>你看，<strong>不是我们坐在那里想到五条规则。</strong></p>
-<p>而是：</p>
-<blockquote>
-<p>一个初始规则 + 四个反例<br>→ 逼出了五个条件。</p>
-</blockquote>
-<hr>
-<h1 id="所以我建议你改变练习方法"><a href="#所以我建议你改变练习方法" class="headerlink" title="所以我建议你改变练习方法"></a>所以我建议你改变练习方法</h1><p>不要再练：</p>
-<blockquote>
-<p>“给你 20 个字段，请分类。”</p>
-</blockquote>
-<p>这种练习做到一定程度收益会迅速下降。</p>
-<p>接下来应该练 <strong>Rule → Attack → Repair</strong>：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">先写最简单规则</span><br><span class="line">       ↓</span><br><span class="line">找反例攻击它</span><br><span class="line">       ↓</span><br><span class="line">解释为什么失败</span><br><span class="line">       ↓</span><br><span class="line">增加/修改一个条件</span><br><span class="line">       ↓</span><br><span class="line">再找反例</span><br><span class="line">       ↓</span><br><span class="line">直到规则稳定</span><br></pre></td></tr></table></figure>
-
-<p>这实际上和你做系统架构、写程序很像：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">initial implementation</span><br><span class="line">       ↓</span><br><span class="line">test case</span><br><span class="line">       ↓</span><br><span class="line">edge case</span><br><span class="line">       ↓</span><br><span class="line">bug</span><br><span class="line">       ↓</span><br><span class="line">fix</span><br><span class="line">       ↓</span><br><span class="line">regression test</span><br></pre></td></tr></table></figure>
-
-<p><strong>Decision Rule 本质上可以当代码来设计。</strong></p>
-<hr>
-<h3 id="还有一个认知升级：不要追求一条巨大-Decision-Rule"><a href="#还有一个认知升级：不要追求一条巨大-Decision-Rule" class="headerlink" title="还有一个认知升级：不要追求一条巨大 Decision Rule"></a>还有一个认知升级：不要追求一条巨大 Decision Rule</h3><p>你可能潜意识里认为我们最终要写：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">IF ...</span><br><span class="line">AND ...</span><br><span class="line">AND ...</span><br><span class="line">AND ...</span><br><span class="line">THEN NUMBER</span><br></pre></td></tr></table></figure>
-
-<p>其实生产系统更适合拆成一个小决策程序：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Step 1  Generate candidates</span><br><span class="line">          ↓</span><br><span class="line">Step 2  Collect evidence</span><br><span class="line">          ↓</span><br><span class="line">Step 3  Check compatibility</span><br><span class="line">          ↓</span><br><span class="line">Step 4  Search contradictions</span><br><span class="line">          ↓</span><br><span class="line">Step 5  Distinguish dirty data</span><br><span class="line">        from semantic conflict</span><br><span class="line">          ↓</span><br><span class="line">Step 6  Compare competing candidates</span><br><span class="line">          ↓</span><br><span class="line">Step 7  Check decision threshold</span><br><span class="line">          ↓</span><br><span class="line">      ┌───────┴───────┐</span><br><span class="line">    enough          insufficient</span><br><span class="line">      ↓                 ↓</span><br><span class="line">  CATEGORY            UNKNOWN</span><br></pre></td></tr></table></figure>
-
-<p>所以你觉得：</p>
-<blockquote>
-<p>“Decision Rule 没什么可写。”</p>
-</blockquote>
-<p>部分原因其实是<strong>任务本身就不应该全部塞进一条 IF 语句里</strong>。</p>
-<hr>
-<p>我认为你现在最需要练的，不是继续背 Prompt Engineering 技巧，而是培养一种习惯：</p>
-<blockquote>
-<p><strong>每当自己觉得一个判断“显然正确”时，立即问：我能不能构造一个输入，让这个规则失败？</strong></p>
-</blockquote>
-<p>比如你说：</p>
-<blockquote>
-<p>“列名明确是 ID，就是强证据。”</p>
-</blockquote>
-<p>马上攻击自己：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column_name = user_id</span><br><span class="line">samples = [&quot;Beijing&quot;,&quot;Shanghai&quot;,&quot;New York&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>再问：</p>
-<blockquote>
-<p><strong>我的规则现在怎么办？</strong></p>
-</blockquote>
-<p>这种 <strong>adversarial &#x2F; counterexample thinking（反例思维）</strong> 一旦建立起来，你写 Decision Rules、Prompt、Agent Workflow，甚至做系统设计，都会明显变强。</p>
-<p>所以我建议第三关先不急着进入 Few-shot。我们可以插一个很短的 <strong>“反例训练营”</strong>：我给你一条看起来完全正确的规则，你负责把它击穿；然后你修规则，我再攻击。做 5～8 轮之后，再进入 Few-shot，你会明显感觉不一样。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3-blog/" data-id="cuid91Qla4tlHFOTjrEBf9-VO" data-title="Day3 - Decision Rule 设计" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-day3-2" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/11/day3-2/" class="article-date">
-  <time class="dt-published" datetime="2026-09-11T13:18:18.338Z" itemprop="datePublished">2026-09-11</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h3 id="IDENTIFIER"><a href="#IDENTIFIER" class="headerlink" title="IDENTIFIER"></a>IDENTIFIER</h3><p>Strong Positive Evidence:</p>
-<ol>
-<li>列名具备明确的ID含义</li>
-<li>数值之间具有较大的相似性</li>
-<li>重复程度比较低</li>
-</ol>
-<p>Weak Positive Evidence:</p>
-<ol>
-<li>整数</li>
-<li></li>
-</ol>
-<p>Strong Negative Evidence:</p>
-<ol>
-<li>可用于算数运算</li>
-<li>包含小数</li>
-</ol>
-<p>Decision Rule:<br>IF 有强正面证据支持<br>AND 没有强的负面证据支持<br>THEN IDENTIFIER</p>
-<h3 id="NUMBER"><a href="#NUMBER" class="headerlink" title="NUMBER"></a>NUMBER</h3><p>Strong Positive Evidence:</p>
-<ol>
-<li>列名明确表示是一个数字，例如容量，人数等</li>
-<li>内容都是数字</li>
-<li>值可用于数字运算</li>
-</ol>
-<p>Weak Positive Evidence:<br>1.<br>2.</p>
-<p>Strong Negative Evidence:</p>
-<ol>
-<li>非数字的字符串</li>
-<li>排列整齐的数字，例如电话，身份证等</li>
-</ol>
-<p>Decision Rule:<br>IF …<br>THEN NUMBER</p>
-<h3 id="DATE"><a href="#DATE" class="headerlink" title="DATE"></a>DATE</h3><p>Strong Positive Evidence:</p>
-<ol>
-<li>列名中包含日期</li>
-<li>符合年月日的日期格式</li>
-<li>统计值最大最小值都是有效日期</li>
-</ol>
-<p>Weak Positive Evidence:</p>
-<ol>
-<li>样本值符合日期格式</li>
-<li></li>
-</ol>
-<p>Strong Negative Evidence:</p>
-<ol>
-<li>数值不是符合日期格式的字符串</li>
-<li>数值可用于运算</li>
-</ol>
-<p>Decision Rule:<br>IF …<br>THEN DATE</p>
-<h3 id="UNKNOWN"><a href="#UNKNOWN" class="headerlink" title="UNKNOWN"></a>UNKNOWN</h3><p>Return UNKNOWN if:</p>
-<ol>
-<li>对于两种类型都有强证据支持</li>
-<li>没有强证据支持</li>
-<li>有互相矛盾的强证据支持</li>
-</ol>
-<p>unknown_reason:</p>
-<ul>
-<li>INSUFFICIENT_EVIDENCE</li>
-<li>CONFLICTING_EVIDENCE</li>
-<li>OUT_OF_TAXONOMY</li>
-</ul>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/11/day3-2/" data-id="cuidKHm6kvBipCkRMXW-S7oXT" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
 
 
   <nav id="page-nav">
@@ -2829,7 +2949,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
     </div>
   </div>
 
@@ -2839,7 +2959,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
     </div>
   </div>
 
@@ -2861,6 +2981,14 @@
       <ul>
         
           <li>
+            <a href="/2026/09/29/day9-1/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/29/day9-3/">Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷</a>
+          </li>
+        
+          <li>
             <a href="/2026/09/18/day8_2/">从 Crawl4AI 理解 Agent：从抓取结果到动态规划</a>
           </li>
         
@@ -2870,14 +2998,6 @@
         
           <li>
             <a href="/2026/09/16/day7-agent-scope/">Day7 - Agent Scope</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/14/day5-agent%20code%20explained/">Day5 - Agent 代码逐行解析</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
           </li>
         
       </ul>
