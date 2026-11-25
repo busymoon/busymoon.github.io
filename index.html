@@ -192,6 +192,288 @@
 
 
   
+    <article id="post-count-min-sketch" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/29/count-min-sketch/" class="article-date">
+  <time class="dt-published" datetime="2026-09-29T02:30:00.000Z" itemprop="datePublished">2026-09-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/29/count-min-sketch/">什么是 Count-Min Sketch？</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="什么是-Count-Min-Sketch？"><a href="#什么是-Count-Min-Sketch？" class="headerlink" title="什么是 Count-Min Sketch？"></a><strong>什么是 Count-Min Sketch？</strong></h1><p><strong>Count-Min Sketch（CMS，计数最小草图）是一种用于统计数据流中元素出现次数的概率性数据结构。</strong></p>
+<p>它的核心思想是：</p>
+<p>不保存每个元素的真实计数，而是使用一个固定大小的二维数组，通过多个哈希函数记录计数，从而用很少的内存估算任意元素出现的次数。</p>
+<p>它特别适合处理海量数据，例如：</p>
+<ul>
+<li>统计 Telegram 中每个关键词出现的次数</li>
+<li>统计网站中每个 URL 被访问的次数</li>
+<li>统计日志中每种错误出现的频率</li>
+<li>统计数据流中的热门用户、热门商品</li>
+</ul>
+<h2 id="一、为什么需要-Count-Min-Sketch？"><a href="#一、为什么需要-Count-Min-Sketch？" class="headerlink" title="一、为什么需要 Count-Min Sketch？"></a><strong>一、为什么需要 Count-Min Sketch？</strong></h2><p>假设我们需要统计 10 亿条数据中，每个关键词出现的次数。</p>
+<p>最直接的方法是使用 HashMap：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">counter = &#123;&#125;for word in stream:    counter[word] = counter.get(word, 0) + 1</span><br></pre></td></tr></table></figure>
+
+
+<p>这种方法可以准确统计，但存在一个问题：</p>
+<p>如果关键词有 1 亿种，就需要保存 1 亿个键值对。</p>
+<p>对于内存有限、数据持续流入的系统，这种方式可能成本很高。</p>
+<p>Count-Min Sketch 的目标是：</p>
+<p><strong>牺牲少量计数精度，换取极低的内存占用。</strong></p>
+<h2 id="二、Count-Min-Sketch-的核心结构"><a href="#二、Count-Min-Sketch-的核心结构" class="headerlink" title="二、Count-Min Sketch 的核心结构"></a><strong>二、Count-Min Sketch 的核心结构</strong></h2><p>它使用一个二维计数矩阵。</p>
+<p>例如，设置：</p>
+<ul>
+<li>4 个哈希函数</li>
+<li>每个哈希函数映射到 10 个位置</li>
+</ul>
+<p>就得到一个 4 行、10 列的矩阵。</p>
+<p>Count-Min Sketch 计数矩阵</p>
+<p>h₁</p>
+<p>0</p>
+<p>1</p>
+<p>2</p>
+<p>3</p>
+<p>4</p>
+<p>5</p>
+<p>6</p>
+<p>7</p>
+<p>8</p>
+<p>9</p>
+<p>h₂</p>
+<p>0</p>
+<p>1</p>
+<p>2</p>
+<p>3</p>
+<p>4</p>
+<p>5</p>
+<p>6</p>
+<p>7</p>
+<p>8</p>
+<p>9</p>
+<p>h₃</p>
+<p>0</p>
+<p>1</p>
+<p>2</p>
+<p>3</p>
+<p>4</p>
+<p>5</p>
+<p>6</p>
+<p>7</p>
+<p>8</p>
+<p>9</p>
+<p>h₄</p>
+<p>0</p>
+<p>1</p>
+<p>2</p>
+<p>3</p>
+<p>4</p>
+<p>5</p>
+<p>6</p>
+<p>7</p>
+<p>8</p>
+<p>9</p>
+<p>4 个哈希函数 × 每行 10 个计数器</p>
+<p>每一行对应一个独立的哈希函数，每一列是一个计数器。</p>
+<h3 id="1-插入一个元素"><a href="#1-插入一个元素" class="headerlink" title="1. 插入一个元素"></a><strong>1. 插入一个元素</strong></h3><p>假设我们插入关键词 <code>apple</code>。</p>
+<p>4 个哈希函数分别计算：</p>
+<table>
+<thead>
+<tr>
+<th>哈希函数</th>
+<th>计算结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>h₁(apple)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>h₂(apple)</td>
+<td>5</td>
+</tr>
+<tr>
+<td>h₃(apple)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>h₄(apple)</td>
+<td>7</td>
+</tr>
+</tbody></table>
+<p>于是，将这 4 个位置的计数器分别加 1。</p>
+<p>如果再插入一次 <code>apple</code>，这 4 个计数器再分别加 1。</p>
+<h3 id="2-查询一个元素"><a href="#2-查询一个元素" class="headerlink" title="2. 查询一个元素"></a><strong>2. 查询一个元素</strong></h3><p>查询 <code>apple</code> 时，重新计算这 4 个哈希位置，读取对应的计数器。</p>
+<p>假设读取结果为：</p>
+<table>
+<thead>
+<tr>
+<th>哈希函数</th>
+<th>计数器值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>h₁(apple)</td>
+<td>12</td>
+</tr>
+<tr>
+<td>h₂(apple)</td>
+<td>15</td>
+</tr>
+<tr>
+<td>h₃(apple)</td>
+<td>12</td>
+</tr>
+<tr>
+<td>h₄(apple)</td>
+<td>18</td>
+</tr>
+</tbody></table>
+<p>那么 CMS 返回：</p>
+<p>\[ \hat f(\text{apple})&#x3D;\min(12,15,12,18)&#x3D;12 \]</p>
+<p>也就是返回最小值 12，作为 <code>apple</code> 出现次数的估计。</p>
+<p>为什么取最小值？因为哈希冲突只会让计数器增加，不会减少。</p>
+<p>因此，CMS 的估计值通常是<strong>真实频率的上界</strong>。</p>
+<h2 id="三、为什么取最小值能够降低误差？"><a href="#三、为什么取最小值能够降低误差？" class="headerlink" title="三、为什么取最小值能够降低误差？"></a><strong>三、为什么取最小值能够降低误差？</strong></h2><p>假设 <code>apple</code> 实际出现了 10 次。</p>
+<p>但是其他关键词也可能被哈希到相同的位置，导致计数器被额外增加。</p>
+<p>例如：</p>
+<ul>
+<li>第 1 行计数器：12</li>
+<li>第 2 行计数器：15</li>
+<li>第 3 行计数器：10</li>
+<li>第 4 行计数器：13</li>
+</ul>
+<p>其中第 3 行恰好没有受到其他关键词的冲突影响。</p>
+<p>取最小值：</p>
+<p>\[ \min(12,15,10,13)&#x3D;10 \]</p>
+<p>就得到了真实频率。</p>
+<p>当然，如果所有行都发生了冲突，最小值也会高于真实频率。</p>
+<p>这就是 CMS 的主要误差来源：<strong>哈希碰撞导致计数被高估。</strong></p>
+<h2 id="四、Count-Min-Sketch-的误差保证"><a href="#四、Count-Min-Sketch-的误差保证" class="headerlink" title="四、Count-Min Sketch 的误差保证"></a><strong>四、Count-Min Sketch 的误差保证</strong></h2><p>CMS 不只是一个经验性的近似算法，它具有明确的概率误差保证。</p>
+<p>设：</p>
+<ul>
+<li>\(N\)：整个数据流中元素的总数量</li>
+<li>\(\epsilon\)：允许的相对误差参数</li>
+<li>\(\delta\)：允许出现误差超标的概率</li>
+</ul>
+<p>CMS 可以通过设置矩阵宽度和深度，保证：</p>
+<p>\[ \hat f(x)\leq f(x)+\epsilon N \]</p>
+<p>并且：</p>
+<p>\[ P\left(\hat f(x)&gt;f(x)+\epsilon N\right)\leq\delta \]</p>
+<p>常见的参数设置为：</p>
+<p>\[ w&#x3D;\left\lceil\frac{e}{\epsilon}\right\rceil \]</p>
+<p>\[ d&#x3D;\left\lceil\ln\frac{1}{\delta}\right\rceil \]</p>
+<p>其中：</p>
+<ul>
+<li>\(w\)：矩阵宽度</li>
+<li>\(d\)：矩阵深度</li>
+</ul>
+<p>矩阵需要的计数器数量约为：</p>
+<p>\[ w\times d \]</p>
+<p>例如，允许误差参数 \(\epsilon&#x3D;0.001\)，失败概率 \(\delta&#x3D;0.01\)，则大约需要：</p>
+<ul>
+<li>宽度：2719</li>
+<li>深度：5</li>
+<li>总计：约 13,595 个计数器</li>
+</ul>
+<p>如果每个计数器使用 4 字节整数，内存仅约 53 KB。</p>
+<p>这就可以统计非常大的数据流，而不需要保存所有元素。</p>
+<h2 id="五、Count-Min-Sketch-的优缺点"><a href="#五、Count-Min-Sketch-的优缺点" class="headerlink" title="五、Count-Min Sketch 的优缺点"></a><strong>五、Count-Min Sketch 的优缺点</strong></h2><table>
+<thead>
+<tr>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>内存占用固定</td>
+<td>计数可能被高估</td>
+</tr>
+<tr>
+<td>适合处理无限数据流</td>
+<td>不能准确恢复所有元素</td>
+</tr>
+<tr>
+<td>插入和查询速度快</td>
+<td>不适合删除元素</td>
+</tr>
+<tr>
+<td>可以合并多个 Sketch</td>
+<td>无法直接列出所有热门元素</td>
+</tr>
+</tbody></table>
+<p>需要注意：CMS 本身只能回答”某个元素大约出现了多少次”，不能直接回答”出现次数最多的 100 个元素是谁”。</p>
+<p>如果需要统计 Top-K，通常会将 CMS 与 Heap、Space-Saving 等结构组合使用。</p>
+<h2 id="六、与-HashMap-的区别"><a href="#六、与-HashMap-的区别" class="headerlink" title="六、与 HashMap 的区别"></a><strong>六、与 HashMap 的区别</strong></h2><table>
+<thead>
+<tr>
+<th>对比</th>
+<th>HashMap</th>
+<th>Count-Min Sketch</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>计数准确性</td>
+<td>精确</td>
+<td>近似</td>
+</tr>
+<tr>
+<td>内存</td>
+<td>随元素种类增长</td>
+<td>固定</td>
+</tr>
+<tr>
+<td>查询复杂度</td>
+<td>平均 O(1)</td>
+<td>O(d)</td>
+</tr>
+<tr>
+<td>插入复杂度</td>
+<td>平均 O(1)</td>
+<td>O(d)</td>
+</tr>
+<tr>
+<td>是否保存元素名称</td>
+<td>是</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<p><strong>最重要的理解：</strong></p>
+<p>HashMap 是为每个元素单独保存一个计数器。</p>
+<p>Count-Min Sketch 则是让所有元素共享一组计数器，通过哈希映射把元素的计数分散到矩阵中。</p>
+<p>它用空间换取了统计能力的扩展性，同时通过多个哈希函数和取最小值来控制误差。</p>
+<p>这也是它在大规模数据流处理、网络流量分析、搜索引擎和实时监控系统中非常有价值的原因。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/29/count-min-sketch/" data-id="cuidRq2xttHi8g2RIYlglQDzM" data-title="什么是 Count-Min Sketch？" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" rel="tag">概率算法</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-day9-3" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/09/29/day9-3/" class="article-date">
@@ -2602,335 +2884,6 @@
 
 
   
-    <article id="post-day4 prompt vs skill" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/13/day4%20prompt%20vs%20skill/" class="article-date">
-  <time class="dt-published" datetime="2026-09-13T02:10:00.000Z" itemprop="datePublished">2026-09-13</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/09/13/day4%20prompt%20vs%20skill/">Day4 - Prompt vs Skill</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>可以。这个区别非常重要，因为很多人会把 <strong>Skill 理解成“保存起来的一段 Prompt”</strong>。这样理解会严重限制后面的 Agent 架构设计。</p>
-<p>先给你一句最重要的定义：</p>
-<blockquote>
-<p><strong>Prompt 是“告诉模型这一次怎么做”的指令；Skill 是 Agent 可复用的一项能力。</strong></p>
-</blockquote>
-<p>因此两者不在同一个抽象层次。</p>
-<h2 id="1-放回-Agent-全景图"><a href="#1-放回-Agent-全景图" class="headerlink" title="1. 放回 Agent 全景图"></a>1. 放回 Agent 全景图</h2><p>可以先这样看：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── Workflow</span><br><span class="line">│</span><br><span class="line">├── Skill：Field Classification</span><br><span class="line">│   │</span><br><span class="line">│   ├── Instructions / Prompt</span><br><span class="line">│   ├── Taxonomy</span><br><span class="line">│   ├── Decision Policy</span><br><span class="line">│   ├── Few-shot</span><br><span class="line">│   ├── Input / Output Schema</span><br><span class="line">│   ├── Context Requirements</span><br><span class="line">│   ├── Tools</span><br><span class="line">│   └── Eval Cases</span><br><span class="line">│</span><br><span class="line">├── Skill：Anomaly Detection</span><br><span class="line">│</span><br><span class="line">└── Tools</span><br><span class="line">    ├── profile_column()</span><br><span class="line">    ├── validate_date()</span><br><span class="line">    └── execute_sql()</span><br></pre></td></tr></table></figure>
-
-<p>所以关系更接近：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Skill</span><br><span class="line"> └── uses Prompt</span><br></pre></td></tr></table></figure>
-
-<p>而不是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Skill = Prompt</span><br></pre></td></tr></table></figure>
-
-<hr>
-<h1 id="2-Prompt-是什么？"><a href="#2-Prompt-是什么？" class="headerlink" title="2. Prompt 是什么？"></a>2. Prompt 是什么？</h1><p>假设我们要做字段分类。</p>
-<p>最简单的 Prompt 可以是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">你是一个字段分类助手。</span><br><span class="line"></span><br><span class="line">根据字段名称、样本值和字段统计信息，</span><br><span class="line">判断该字段的语义类型。</span><br><span class="line"></span><br><span class="line">必须从 available_categories 中选择。</span><br><span class="line">如果证据不足，返回 UNKNOWN。</span><br></pre></td></tr></table></figure>
-
-<p>它主要解决：</p>
-<blockquote>
-<p><strong>LLM 当前应该执行什么任务、遵循什么基本行为。</strong></p>
-</blockquote>
-<p>输入：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">column_name = user_id</span><br><span class="line">samples = [&quot;10001&quot;, &quot;10002&quot;, &quot;10003&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>输出：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IDENTIFIER</span><br></pre></td></tr></table></figure>
-
-<p>从程序角度看，它很像：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LLM(</span><br><span class="line">    instructions,</span><br><span class="line">    context</span><br><span class="line">)</span><br><span class="line">→ result</span><br></pre></td></tr></table></figure>
-
-<p>到这里甚至不一定需要“Skill”这个概念。</p>
-<hr>
-<h1 id="3-Skill-比-Prompt-多了什么？"><a href="#3-Skill-比-Prompt-多了什么？" class="headerlink" title="3. Skill 比 Prompt 多了什么？"></a>3. Skill 比 Prompt 多了什么？</h1><p>假设你现在准备把字段分类能力交给整个 CSV Agent 长期使用。</p>
-<p>要求开始增加：</p>
-<blockquote>
-<p>分类体系是什么？</p>
-<p>判断冲突怎么办？</p>
-<p>需要哪些 Context？</p>
-<p>是否允许 UNKNOWN？</p>
-<p>如果缺少统计信息怎么办？</p>
-<p>输出必须是什么结构？</p>
-<p>怎么知道这个能力改坏了没有？</p>
-</blockquote>
-<p>这时候单独一个 Prompt 已经不够描述这项能力了。</p>
-<p>于是我们把整个能力封装成：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br></pre></td></tr></table></figure>
-
-<p>内部可能是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br><span class="line">│</span><br><span class="line">├── Goal</span><br><span class="line">│   └── 判断字段 semantic type</span><br><span class="line">│</span><br><span class="line">├── Input Contract</span><br><span class="line">│   ├── column_name</span><br><span class="line">│   ├── samples</span><br><span class="line">│   ├── statistics</span><br><span class="line">│   └── business_context</span><br><span class="line">│</span><br><span class="line">├── Instructions</span><br><span class="line">│</span><br><span class="line">├── Taxonomy</span><br><span class="line">│   ├── IDENTIFIER</span><br><span class="line">│   ├── NUMBER</span><br><span class="line">│   ├── DATE</span><br><span class="line">│   └── ...</span><br><span class="line">│</span><br><span class="line">├── Decision Policy</span><br><span class="line">│   └── 如何使用证据判断</span><br><span class="line">│</span><br><span class="line">├── Few-shot</span><br><span class="line">│   └── 边界案例</span><br><span class="line">│</span><br><span class="line">├── Tools</span><br><span class="line">│   └── profile_column()</span><br><span class="line">│</span><br><span class="line">├── Output Contract</span><br><span class="line">│   ├── category</span><br><span class="line">│   ├── confidence</span><br><span class="line">│   ├── evidence</span><br><span class="line">│   └── reason_code</span><br><span class="line">│</span><br><span class="line">└── Evals</span><br><span class="line">    └── 这项能力是否工作正常</span><br></pre></td></tr></table></figure>
-
-<p>所以 Skill 的关注点不是：</p>
-<blockquote>
-<p><strong>“这段话怎么写？”</strong></p>
-</blockquote>
-<p>而是：</p>
-<blockquote>
-<p><strong>“如何可靠地提供这项能力？”</strong></p>
-</blockquote>
-<p>这是两者最本质的区别。</p>
-<hr>
-<h1 id="4-用传统软件工程类比，会更容易理解"><a href="#4-用传统软件工程类比，会更容易理解" class="headerlink" title="4. 用传统软件工程类比，会更容易理解"></a>4. 用传统软件工程类比，会更容易理解</h1><p>你是做软件架构的，可以把 Prompt 类比成<strong>函数实现中的一部分逻辑</strong>，而 Skill 更像一个<strong>能力模块 &#x2F; service capability</strong>。</p>
-<p>例如：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">FieldClassificationSkill</span>:</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">execute</span>(<span class="params">self, column</span>):</span><br><span class="line"></span><br><span class="line">        context = <span class="variable language_">self</span>.build_context(column)</span><br><span class="line"></span><br><span class="line">        stats = <span class="variable language_">self</span>.tools.profile(column)</span><br><span class="line"></span><br><span class="line">        result = <span class="variable language_">self</span>.llm.call(</span><br><span class="line">            instructions=<span class="variable language_">self</span>.instructions,</span><br><span class="line">            taxonomy=<span class="variable language_">self</span>.taxonomy,</span><br><span class="line">            policy=<span class="variable language_">self</span>.policy,</span><br><span class="line">            examples=<span class="variable language_">self</span>.select_examples(context),</span><br><span class="line">            context=context,</span><br><span class="line">            output_schema=<span class="variable language_">self</span>.schema</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.validate(result)</span><br></pre></td></tr></table></figure>
-
-<p>注意：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self.instructions</span><br></pre></td></tr></table></figure>
-
-<p>只是整个 Skill 的一部分。</p>
-<p>Skill 还负责：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">输入是什么</span><br><span class="line">↓</span><br><span class="line">需要什么 Context</span><br><span class="line">↓</span><br><span class="line">需要什么 Tool</span><br><span class="line">↓</span><br><span class="line">怎么调用 LLM</span><br><span class="line">↓</span><br><span class="line">输出是什么</span><br><span class="line">↓</span><br><span class="line">怎么验证</span><br></pre></td></tr></table></figure>
-
-<p>所以从架构角度：</p>
-<blockquote>
-<p><strong>Prompt 更像 LLM interaction layer。</strong></p>
-<p><strong>Skill 更像 capability layer。</strong></p>
-</blockquote>
-<hr>
-<h1 id="5-一个-Skill-甚至不一定只有一个-Prompt"><a href="#5-一个-Skill-甚至不一定只有一个-Prompt" class="headerlink" title="5. 一个 Skill 甚至不一定只有一个 Prompt"></a>5. 一个 Skill 甚至不一定只有一个 Prompt</h1><p>这是特别容易被忽略的一点。</p>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CleaningPlanSkill</span><br></pre></td></tr></table></figure>
-
-<p>内部可能是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Step 1</span><br><span class="line">理解异常</span><br><span class="line">↓</span><br><span class="line">Prompt A</span><br><span class="line"></span><br><span class="line">Step 2</span><br><span class="line">如果信息不足</span><br><span class="line">↓</span><br><span class="line">调用 profile Tool</span><br><span class="line"></span><br><span class="line">Step 3</span><br><span class="line">生成 Cleaning Plan</span><br><span class="line">↓</span><br><span class="line">Prompt B</span><br><span class="line"></span><br><span class="line">Step 4</span><br><span class="line">检查 Plan 风险</span><br><span class="line">↓</span><br><span class="line">Prompt C</span><br><span class="line"></span><br><span class="line">Step 5</span><br><span class="line">Structured Output</span><br></pre></td></tr></table></figure>
-
-<p>那么：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1 Skill</span><br><span class="line">≠</span><br><span class="line">1 Prompt</span><br></pre></td></tr></table></figure>
-
-<p>可能是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1 Skill</span><br><span class="line">=</span><br><span class="line">多个 Prompt</span><br><span class="line">+</span><br><span class="line">多个 Tool</span><br><span class="line">+</span><br><span class="line">局部 Workflow</span><br></pre></td></tr></table></figure>
-
-<hr>
-<h1 id="6-反过来，一个-Prompt-也可能同时调用多个-Skill-吗？"><a href="#6-反过来，一个-Prompt-也可能同时调用多个-Skill-吗？" class="headerlink" title="6. 反过来，一个 Prompt 也可能同时调用多个 Skill 吗？"></a>6. 反过来，一个 Prompt 也可能同时调用多个 Skill 吗？</h1><p>这里要谨慎。</p>
-<p>如果用户说：</p>
-<blockquote>
-<p>“帮我分析这个 CSV 的问题，然后制定清洗方案。”</p>
-</blockquote>
-<p>Agent 的顶层 instruction 可能描述整个任务。</p>
-<p>但真正执行时：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line"> ↓</span><br><span class="line">Field Understanding Skill</span><br><span class="line"> ↓</span><br><span class="line">Anomaly Detection Skill</span><br><span class="line"> ↓</span><br><span class="line">Cleaning Planning Skill</span><br></pre></td></tr></table></figure>
-
-<p>所以不要根据“Prompt 有几段文字”决定 Skill 怎么拆。</p>
-<p><strong>Skill 的拆分依据应该是能力边界。</strong></p>
-<p>这是一个非常重要的架构原则。</p>
-<hr>
-<h1 id="7-怎么判断一个东西应该成为-Skill？"><a href="#7-怎么判断一个东西应该成为-Skill？" class="headerlink" title="7. 怎么判断一个东西应该成为 Skill？"></a>7. 怎么判断一个东西应该成为 Skill？</h1><p>以后可以问四个问题：</p>
-<p><strong>第一，它是不是一个相对独立的能力？</strong></p>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">字段语义识别</span><br></pre></td></tr></table></figure>
-
-<p>是。</p>
-<p>“判断 DATE”通常不是一个独立 Skill，而是 Field Classification Skill 内的一种分类能力。</p>
-<p><strong>第二，它能不能被多个 Workflow 重用？</strong></p>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AnomalyDetectionSkill</span><br></pre></td></tr></table></figure>
-
-<p>CSV Cleaning 可以用。</p>
-<p>Data Quality Inspection 也可以用。</p>
-<p>自动数据治理也可以用。</p>
-<p>这非常适合 Skill。</p>
-<p><strong>第三，它有没有比较稳定的 Input → Capability → Output 边界？</strong></p>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Input:</span><br><span class="line">column + context</span><br><span class="line"></span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">FieldClassificationSkill</span><br><span class="line"></span><br><span class="line">        ↓</span><br><span class="line"></span><br><span class="line">Output:</span><br><span class="line">semantic_type</span><br><span class="line">confidence</span><br><span class="line">evidence</span><br></pre></td></tr></table></figure>
-
-<p>边界非常清楚。</p>
-<p><strong>第四，它能不能被独立 Eval？</strong></p>
-<p>这是我很推荐的判断方式。</p>
-<p>如果你能说：</p>
-<blockquote>
-<p>“我要单独测试 Field Classification 的准确率。”</p>
-</blockquote>
-<p>那么它很可能值得成为 Skill。</p>
-<hr>
-<h1 id="8-Skill-和-Tool-也顺便区分一下"><a href="#8-Skill-和-Tool-也顺便区分一下" class="headerlink" title="8. Skill 和 Tool 也顺便区分一下"></a>8. Skill 和 Tool 也顺便区分一下</h1><p>这三个概念经常混在一起：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Prompt</span><br><span class="line">Skill</span><br><span class="line">Tool</span><br></pre></td></tr></table></figure>
-
-<p>可以先这么记：</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Prompt</th>
-<th>Skill</th>
-<th>Tool</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>核心</td>
-<td>指令</td>
-<td>能力</td>
-<td>动作</td>
-</tr>
-<tr>
-<td>主要问题</td>
-<td>模型怎么做</td>
-<td>Agent 会什么</td>
-<td>Agent 能执行什么</td>
-</tr>
-<tr>
-<td>是否通常涉及 LLM</td>
-<td>是</td>
-<td>可能</td>
-<td>不一定</td>
-</tr>
-<tr>
-<td>是否有输入输出</td>
-<td>有</td>
-<td>有</td>
-<td>有</td>
-</tr>
-<tr>
-<td>是否可复用</td>
-<td>可以</td>
-<td><strong>强调复用</strong></td>
-<td>强调复用</td>
-</tr>
-<tr>
-<td>例子</td>
-<td>分类指令</td>
-<td>Field Classification</td>
-<td>profile_column</td>
-</tr>
-<tr>
-<td>确定性</td>
-<td>低</td>
-<td>视实现而定</td>
-<td>通常较高</td>
-</tr>
-</tbody></table>
-<p>比如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br></pre></td></tr></table></figure>
-
-<p>告诉 Agent：</p>
-<blockquote>
-<p><strong>我有“理解字段语义”的能力。</strong></p>
-</blockquote>
-<p>而：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">profile_column()</span><br></pre></td></tr></table></figure>
-
-<p>告诉 Agent：</p>
-<blockquote>
-<p><strong>我可以实际计算这一列的统计信息。</strong></p>
-</blockquote>
-<p>Skill 在判断：</p>
-<blockquote>
-<p>“它是什么？”</p>
-</blockquote>
-<p>Tool 在执行：</p>
-<blockquote>
-<p>“帮我算一下。”</p>
-</blockquote>
-<hr>
-<h1 id="9-Skill-和-Workflow-又有什么区别？"><a href="#9-Skill-和-Workflow-又有什么区别？" class="headerlink" title="9. Skill 和 Workflow 又有什么区别？"></a>9. Skill 和 Workflow 又有什么区别？</h1><p>这个也很关键。</p>
-<p>例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br></pre></td></tr></table></figure>
-
-<p>是一项能力。</p>
-<p>而：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Understand</span><br><span class="line">   ↓</span><br><span class="line">Profile</span><br><span class="line">   ↓</span><br><span class="line">Detect</span><br><span class="line">   ↓</span><br><span class="line">Plan</span><br><span class="line">   ↓</span><br><span class="line">Execute</span><br><span class="line">   ↓</span><br><span class="line">Validate</span><br></pre></td></tr></table></figure>
-
-<p>是在组织多项能力完成一个更大的 Goal。</p>
-<p>所以：</p>
-<blockquote>
-<p><strong>Skill 回答：Agent 会什么？</strong></p>
-<p><strong>Workflow 回答：这些能力按照什么关系协作？</strong></p>
-</blockquote>
-<p>但边界不是绝对的。</p>
-<p>一个复杂 Skill 内部也可以有自己的小 Workflow：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FieldClassificationSkill</span><br><span class="line">       │</span><br><span class="line">       ├─ Initial Classification</span><br><span class="line">       │</span><br><span class="line">       ├─ Need more evidence?</span><br><span class="line">       │       ↓</span><br><span class="line">       │   profile_column()</span><br><span class="line">       │</span><br><span class="line">       ├─ Re-classify</span><br><span class="line">       │</span><br><span class="line">       └─ Validate</span><br></pre></td></tr></table></figure>
-
-<p>所以整个 Agent 是一种<strong>分层结构</strong>：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── Global Workflow</span><br><span class="line">│</span><br><span class="line">├── Skill A</span><br><span class="line">│   └── Local Workflow</span><br><span class="line">│       ├── Prompt</span><br><span class="line">│       └── Tool</span><br><span class="line">│</span><br><span class="line">└── Skill B</span><br></pre></td></tr></table></figure>
-
-<p>这和传统软件中的：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">System</span><br><span class="line"> ↓</span><br><span class="line">Service</span><br><span class="line"> ↓</span><br><span class="line">Module</span><br><span class="line"> ↓</span><br><span class="line">Function</span><br></pre></td></tr></table></figure>
-
-<p>非常相似。</p>
-<hr>
-<h1 id="10-为什么要引入-Skill-这一层？"><a href="#10-为什么要引入-Skill-这一层？" class="headerlink" title="10. 为什么要引入 Skill 这一层？"></a>10. 为什么要引入 Skill 这一层？</h1><p>这是最值得理解的地方。</p>
-<p>假设没有 Skill：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── prompt_1</span><br><span class="line">├── prompt_2</span><br><span class="line">├── prompt_3</span><br><span class="line">├── prompt_4</span><br><span class="line">├── tool_1</span><br><span class="line">├── tool_2</span><br><span class="line">├── taxonomy.json</span><br><span class="line">├── examples.json</span><br><span class="line">└── ...</span><br></pre></td></tr></table></figure>
-
-<p>时间久了你很难回答：</p>
-<blockquote>
-<p>哪些东西共同构成“字段分类能力”？</p>
-</blockquote>
-<p>引入 Skill 后：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Agent</span><br><span class="line">│</span><br><span class="line">├── FieldClassificationSkill</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Taxonomy</span><br><span class="line">│   ├── Policy</span><br><span class="line">│   ├── Examples</span><br><span class="line">│   └── Eval</span><br><span class="line">│</span><br><span class="line">├── AnomalyDetectionSkill</span><br><span class="line">│   ├── Prompt</span><br><span class="line">│   ├── Rules</span><br><span class="line">│   ├── Tools</span><br><span class="line">│   └── Eval</span><br><span class="line">│</span><br><span class="line">└── CleaningPlanSkill</span><br></pre></td></tr></table></figure>
-
-<p>系统从：</p>
-<blockquote>
-<p><strong>按技术组件组织</strong></p>
-</blockquote>
-<p>变成：</p>
-<blockquote>
-<p><strong>按能力组织。</strong></p>
-</blockquote>
-<p>对于复杂 Agent，这个变化非常重要。</p>
-<hr>
-<h1 id="11-所以你以后可以用三个层次思考"><a href="#11-所以你以后可以用三个层次思考" class="headerlink" title="11. 所以你以后可以用三个层次思考"></a>11. 所以你以后可以用三个层次思考</h1><p>拿到一个需求：</p>
-<blockquote>
-<p>“自动清洗 CSV。”</p>
-</blockquote>
-<p>第一层先问 <strong>Workflow</strong>：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">为了完成这个 Goal，需要经历哪些阶段？</span><br></pre></td></tr></table></figure>
-
-<p>得到：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Understand → Detect → Plan → Execute → Validate</span><br></pre></td></tr></table></figure>
-
-<p>第二层问 <strong>Skill</strong>：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">每个阶段需要 Agent 具备什么能力？</span><br></pre></td></tr></table></figure>
-
-<p>得到：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Field Understanding</span><br><span class="line">Anomaly Detection</span><br><span class="line">Cleaning Planning</span><br><span class="line">Result Validation</span><br></pre></td></tr></table></figure>
-
-<p>第三层才问 <strong>Prompt</strong>：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">某个 Skill 需要 LLM 时，</span><br><span class="line">应该如何指导 LLM 完成这一步？</span><br></pre></td></tr></table></figure>
-
-<p>于是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">业务 Goal</span><br><span class="line">   ↓</span><br><span class="line">Workflow：怎么完成</span><br><span class="line">   ↓</span><br><span class="line">Skill：需要什么能力</span><br><span class="line">   ↓</span><br><span class="line">Prompt：LLM 如何提供其中的能力</span><br></pre></td></tr></table></figure>
-
-<p>这三个层级一旦分清楚，你后面设计 Agent 会清晰很多。</p>
-<p>最值得记住的一句话就是：</p>
-<blockquote>
-<p><strong>不要从 Prompt 开始设计 Agent。先从 Goal 拆 Workflow，从 Workflow 识别 Skills，再为需要 LLM 的 Skill 设计 Prompt。</strong></p>
-</blockquote>
-<p>下一步我们可以顺着这个问题继续讲 <strong>“Skill 到底应该拆多大：什么时候应该拆成两个 Skill，什么时候应该只是一个 Skill 里的两个步骤”</strong>。这个问题会直接决定 Agent 的模块化程度。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/13/day4%20prompt%20vs%20skill/" data-id="cuidDy4zO4R0WTR9vfHQnToXv" data-title="Day4 - Prompt vs Skill" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
 
 
   <nav id="page-nav">
@@ -2949,7 +2902,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" rel="tag">概率算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li></ul>
     </div>
   </div>
 
@@ -2959,7 +2912,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" style="font-size: 10px;">概率算法</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a>
     </div>
   </div>
 
@@ -2985,6 +2938,10 @@
           </li>
         
           <li>
+            <a href="/2026/09/29/count-min-sketch/">什么是 Count-Min Sketch？</a>
+          </li>
+        
+          <li>
             <a href="/2026/09/29/day9-3/">Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷</a>
           </li>
         
@@ -2994,10 +2951,6 @@
         
           <li>
             <a href="/2026/09/16/day7-agent-design/">Day7 - Agent Design</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/16/day7-agent-scope/">Day7 - Agent Scope</a>
           </li>
         
       </ul>
