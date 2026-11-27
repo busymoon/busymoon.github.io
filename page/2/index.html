@@ -71,6 +71,74 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-day4-summary" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/13/day4-summary/" class="article-date">
+  <time class="dt-published" datetime="2026-09-13T02:30:00.000Z" itemprop="datePublished">2026-09-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h3 id="今日-Agent-学习要点"><a href="#今日-Agent-学习要点" class="headerlink" title="今日 Agent 学习要点"></a>今日 Agent 学习要点</h3><p><strong>Q1：什么是 Skill？</strong><br>A：Agent 中一项可复用的能力，类似软件工程中的 Service &#x2F; Capability。</p>
+<p><strong>Q2：什么是 Prompt？</strong><br>A：指导 LLM 执行某个认知动作的 Instructions，是 Skill 的组成部分之一。</p>
+<p><strong>Q3：Skill 和 Prompt 的关系是什么？</strong><br>A：Skill ≠ Prompt。一个 Skill 可以包含 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Output Schema、Eval 等，也可以包含多次 LLM 调用。</p>
+<p><strong>Q4：Workflow 和 Skill 的关系是什么？</strong><br>A：Workflow 负责组织多个 Skill&#x2F;Tool 完成整体目标；Skill 负责提供具体能力。</p>
+<p><strong>Q5：Prompt、Context 的区别是什么？</strong><br>A：Prompt 决定“怎么做”；Context 决定“这一次做的时候知道什么”。</p>
+<p><strong>Q6：Taxonomy 是什么？</strong><br>A：定义系统中“有哪些概念&#x2F;答案”。</p>
+<p><strong>Q7：Decision Policy 是什么？</strong><br>A：定义如何根据证据从多个候选答案中做出判断。</p>
+<p><strong>Q8：Few-shot 是什么？</strong><br>A：通过具体案例向模型示范如何应用抽象的 Policy。</p>
+<p><strong>Q9：Tool 是什么？</strong><br>A：Agent 用于获取信息、执行计算、验证结果或改变外部环境的确定性能力。</p>
+<p><strong>Q10：什么时候应该用 Tool，而不是 LLM？</strong><br>A：能够通过确定性计算、查询、验证或转换得到的结果，优先交给 Tool。</p>
+<p><strong>Q11：Eval 是什么？</strong><br>A：衡量 Skill&#x2F;Agent 是否正确，以及修改后是否真正改善、是否产生 Regression。</p>
+<p><strong>Q12：Agent 的核心运行循环是什么？</strong><br>A：<code>Observe → Decide → Act → Observe</code>，直到 Goal 完成或终止。</p>
+<p><strong>Q13：Observe 是什么？</strong><br>A：Agent 获取当前环境、任务和工具执行结果等信息。</p>
+<p><strong>Q14：Decide 是什么？</strong><br>A：根据 Goal、State、Context、Policy 和 Available Actions 决定下一步行动。</p>
+<p><strong>Q15：Act 是什么？</strong><br>A：调用 Tool、Skill、Human 等执行 Decision，产生新的 Observation。</p>
+<p><strong>Q16：为什么同一个错误结果可能有不同原因？</strong><br>A：可能是 Observe 信息缺失、Decide 判断错误，也可能是 Act 执行错误，需要 Failure Decomposition。</p>
+<p><strong>Q17：什么是 State？</strong><br>A：描述当前任务“现在做到哪里、处于什么状态”。</p>
+<p><strong>Q18：什么是 Context？</strong><br>A：为了当前这一次 Decision，选择让模型看到的信息。</p>
+<p><strong>Q19：什么是 Memory？</strong><br>A：从过去经历中保留下来、未来任务可能再次使用的信息。</p>
+<p><strong>Q20：什么是 History？</strong><br>A：记录过去发生过什么；History 是“怎么走到这里”，State 是“现在在哪里”。</p>
+<p><strong>Q21：Memory 和 Knowledge 有什么区别？</strong><br>A：Memory 主要来自历史运行和交互经验；Knowledge 是相对稳定、权威、经过治理的外部知识。</p>
+<p><strong>Q22：Memory 是否一定要变成 Knowledge？</strong><br>A：不一定。只有经过审核、治理后，部分 Memory 才可能沉淀为正式 Knowledge。</p>
+<p><strong>Q23：Memory 如何影响未来 Decision？</strong><br>A：<code>Memory → Retrieval → Context → LLM → Decision</code>。</p>
+<p><strong>Q24：Memory 系统最核心的两个问题是什么？</strong><br>A：什么时候记（Memory Write Policy）和什么时候想起来（Memory Retrieval Policy）。</p>
+<p><strong>Q25：State、Context、Memory 最简单的记忆方式是什么？</strong><br>A：<code>State = Where am I?</code>；<code>Context = What do I need to know now?</code>；<code>Memory = What from the past should I remember?</code></p>
+<p><strong>Q26：Context 的信息可以来自哪里？</strong><br>A：State、Observation、History、Memory、Knowledge、Tool Results、用户输入等。</p>
+<p><strong>Q27：Context Engineering 的核心是什么？</strong><br>A：为当前 Goal + State + Decision 选择最合适的信息，而不是简单把所有信息塞给 LLM。</p>
+<p><strong>Q28：Agent 架构设计中的重要原则是什么？</strong><br>A：结果错误时不要默认“改 Prompt”，先定位错误属于 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Workflow、State&#x2F;Memory 还是其他层。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/13/day4-summary/" data-id="cuidjivb98RweqWp9hD64uKnZ" data-title="Day4 - 学习总结" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-day4-lession 2" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/09/13/day4-lession%202/" class="article-date">
@@ -2451,62 +2519,11 @@ result:
 
 
   
-    <article id="post-hello-world" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/07/hello-world/" class="article-date">
-  <time class="dt-published" datetime="2026-09-07T12:56:37.429Z" itemprop="datePublished">2026-09-07</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/09/07/hello-world/">Hello World</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br><span class="line">hjh</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/07/hello-world/" data-id="cuid68GD2dfmF_xyl3uClh1i5" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
 
 
   <nav id="page-nav">
     
-    <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
   </nav>
 
 </section>
@@ -2520,7 +2537,7 @@ result:
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" rel="tag">概率算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Elasticsearch/" rel="tag">Elasticsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Page-Cache/" rel="tag">Page Cache</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" rel="tag">概率算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
     </div>
   </div>
 
@@ -2530,7 +2547,7 @@ result:
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 16.67px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 13.33px;">架构设计</a> <a href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" style="font-size: 10px;">概率算法</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Elasticsearch/" style="font-size: 10px;">Elasticsearch</a> <a href="/tags/Page-Cache/" style="font-size: 10px;">Page Cache</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 10px;">操作系统</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 15px;">架构设计</a> <a href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" style="font-size: 10px;">概率算法</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
     </div>
   </div>
 
@@ -2556,6 +2573,10 @@ result:
           </li>
         
           <li>
+            <a href="/2026/09/29/page-cache-and-elasticsearch/">从 Page Cache 到 Elasticsearch：操作系统缓存与近实时写入的本质</a>
+          </li>
+        
+          <li>
             <a href="/2026/09/29/redis-three-classic-scenarios/">Redis 三大经典场景：分布式锁 / 秒杀扣减 / 实时排行榜</a>
           </li>
         
@@ -2565,10 +2586,6 @@ result:
         
           <li>
             <a href="/2026/09/29/day9-3/">Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/18/day8_2/">从 Crawl4AI 理解 Agent：从抓取结果到动态规划</a>
           </li>
         
       </ul>

@@ -192,6 +192,137 @@
 
 
   
+    <article id="post-page-cache-and-elasticsearch" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/09/29/page-cache-and-elasticsearch/" class="article-date">
+  <time class="dt-published" datetime="2026-09-29T03:30:00.000Z" itemprop="datePublished">2026-09-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/09/29/page-cache-and-elasticsearch/">从 Page Cache 到 Elasticsearch：操作系统缓存与近实时写入的本质</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>这两篇文档其实是在讲同一件事的两个面：<strong>操作系统内核用 Page Cache 缓存一切文件读写</strong>，而 <strong>Elasticsearch 的”近实时”能力，本质上就是借力 Page Cache 换来的</strong>。合并成一篇，你就能把底层缓存机制和应用层架构串起来。</p>
+<hr>
+<h1 id="第一篇：Page-Cache-内核篇"><a href="#第一篇：Page-Cache-内核篇" class="headerlink" title="第一篇：Page Cache 内核篇"></a>第一篇：Page Cache 内核篇</h1><p>内核不需要提前”猜”哪些数据热门，它的规则极其简单粗暴：<strong>默认情况下，只要应用程序通过标准文件系统接口读写硬盘文件，就必须经过 Page Cache（凡走必留痕）。</strong></p>
+<p>具体来说，内核通过以下 <strong>3 种机制</strong>把数据装进 Page Cache，同时留了 <strong>1 个旁路后门</strong>：</p>
+<hr>
+<h2 id="一、数据是怎么被放进-Page-Cache-的？（3-条路径）"><a href="#一、数据是怎么被放进-Page-Cache-的？（3-条路径）" class="headerlink" title="一、数据是怎么被放进 Page Cache 的？（3 条路径）"></a>一、数据是怎么被放进 Page Cache 的？（3 条路径）</h2><h3 id="1-读文件时”顺手留下”（Read-Cache）"><a href="#1-读文件时”顺手留下”（Read-Cache）" class="headerlink" title="1. 读文件时”顺手留下”（Read Cache）"></a>1. 读文件时”顺手留下”（Read Cache）</h3><ul>
+<li>当程序调用 <code>read()</code> 读取文件某一段数据时，内核先查 Page Cache（以 <code>文件描述符 + 文件内偏移量</code> 为索引，每页 4KB）。</li>
+<li><strong>如果没命中</strong>：内核去硬盘把这 4KB 读进 Page Cache，再拷贝一份给应用程序。这样下次再读同一块数据时，直接从内存秒出。</li>
+</ul>
+<h3 id="2-写文件时”先记账、后落盘”（Write-Back-写回机制）"><a href="#2-写文件时”先记账、后落盘”（Write-Back-写回机制）" class="headerlink" title="2. 写文件时”先记账、后落盘”（Write-Back 写回机制）"></a>2. 写文件时”先记账、后落盘”（Write-Back 写回机制）</h3><ul>
+<li>当程序调用 <code>write()</code> 写文件时（比如 ES 写 Translog、Kafka 追加消息），内核<strong>根本不直接写硬盘</strong>，而是把数据直接塞进 Page Cache，把这几页标记为”脏页（Dirty Page）”，然后立刻告诉程序”写入成功”。</li>
+<li>随后，内核后台的刷盘线程（<code>flusher</code>）会在脏页比例超标或超时（默认 30 秒）时，默默把脏页批量刷进物理硬盘。</li>
+</ul>
+<h3 id="3-顺序读时”提前预读”（Read-Ahead-顺藤摸瓜）"><a href="#3-顺序读时”提前预读”（Read-Ahead-顺藤摸瓜）" class="headerlink" title="3. 顺序读时”提前预读”（Read-Ahead 顺藤摸瓜）"></a>3. 顺序读时”提前预读”（Read-Ahead 顺藤摸瓜）</h3><ul>
+<li>内核非常聪明：如果它发现程序连续读取了文件的第 1 页、第 2 页、第 3 页，就会判定你在做<strong>顺序扫描</strong>（比如 StarRocks 扫列存文件、Kafka 顺序消费）。</li>
+<li>内核会主动在后台提前把第 4~32 页从硬盘预读进 Page Cache。等程序真正请求第 4 页时，数据早就躺在内存里等它了。</li>
+</ul>
+<hr>
+<h2 id="二、唯一的例外：什么时候不放进-Page-Cache？"><a href="#二、唯一的例外：什么时候不放进-Page-Cache？" class="headerlink" title="二、唯一的例外：什么时候不放进 Page Cache？"></a>二、唯一的例外：什么时候<strong>不</strong>放进 Page Cache？</h2><p>有些重型数据库（比如 <strong>MySQL InnoDB</strong>）自己写了一套极其精密的内存缓冲池（Buffer Pool），不希望操作系统插手管理缓存（否则同一份数据既在 InnoDB 内存里、又在 Page Cache 里，造成双倍内存浪费）。</p>
+<ul>
+<li>这类程序在打开文件时会显式加上 <strong><code>O_DIRECT</code>（直接 I&#x2F;O）</strong> 标志。</li>
+<li>加了这个标志后，读写请求会<strong>彻底绕开 Page Cache</strong>，直接在应用程序内存和物理硬盘之间传输数据。</li>
+</ul>
+<hr>
+<h2 id="三、放满了怎么办？（双链表-LRU-淘汰）"><a href="#三、放满了怎么办？（双链表-LRU-淘汰）" class="headerlink" title="三、放满了怎么办？（双链表 LRU 淘汰）"></a>三、放满了怎么办？（双链表 LRU 淘汰）</h2><p>Page Cache 既然是动态蓄水池，内存紧张时内核会按改进版的 <strong>LRU（最近最少使用）算法</strong>清理：</p>
+<ol>
+<li><strong>干净页（已落盘）</strong>：直接丢弃，0 毫秒腾出内存。</li>
+<li><strong>脏页（未落盘）</strong>：必须先触发刷盘写进硬盘变成干净页，然后才能回收。</li>
+</ol>
+<hr>
+<h1 id="第二篇：Elasticsearch-写入篇"><a href="#第二篇：Elasticsearch-写入篇" class="headerlink" title="第二篇：Elasticsearch 写入篇"></a>第二篇：Elasticsearch 写入篇</h1><p>Elasticsearch 的写入与查询机制，核心是在解决同一个矛盾：<strong>底层 Lucene 的倒排索引文件（Segment）一旦生成就不可修改（Immutable）</strong>。</p>
+<p>围绕这个物理铁律，ES 设计了 <strong>“借力 OS 缓存实现秒级可搜”</strong> 的写入流水线，但也埋下了 <strong>“合并开销大”</strong> 和 <strong>“分布式深分页爆炸”</strong> 两个经典深坑。</p>
+<hr>
+<h2 id="一、近实时写入三步曲：Refresh-Flush-Merge"><a href="#一、近实时写入三步曲：Refresh-Flush-Merge" class="headerlink" title="一、近实时写入三步曲：Refresh &#x2F; Flush &#x2F; Merge"></a>一、近实时写入三步曲：Refresh &#x2F; Flush &#x2F; Merge</h2><p>一次数据写入 ES，不会立刻刷进物理硬盘（太慢），而是走完下面 <strong>3 个阶段</strong>：</p>
+<h3 id="1-Refresh（默认-1-秒一次-➔-数据”可被搜索”）"><a href="#1-Refresh（默认-1-秒一次-➔-数据”可被搜索”）" class="headerlink" title="1. Refresh（默认 1 秒一次 ➔ 数据”可被搜索”）"></a>1. Refresh（默认 1 秒一次 ➔ 数据”可被搜索”）</h3><ul>
+<li><strong>动作</strong>：新写入的文档先进入 <strong>JVM Memory Buffer</strong>（此时搜不到），同时顺序追加写入 <strong>Translog</strong>（事务日志，防断电丢数据）。每隔 <strong>1 秒</strong>，ES 执行一次 <code>Refresh</code>：把内存 Buffer 里的数据生成一个新的倒排索引小文件（<strong>Segment</strong>），并写进操作系统的 <strong>Page Cache（内存页缓存）</strong>。</li>
+<li><strong>架构精髓</strong>：只要进了 OS Page Cache，文件就可以像磁盘文件一样被读取搜索，但省去了物理落盘的耗时。这就是为什么 ES 叫 <strong>“近实时（NRT，延迟 1 秒）”</strong>。</li>
+</ul>
+<h3 id="2-Flush（默认-30-分钟或-Translog-满-512MB-➔-数据”真正落盘”）"><a href="#2-Flush（默认-30-分钟或-Translog-满-512MB-➔-数据”真正落盘”）" class="headerlink" title="2. Flush（默认 30 分钟或 Translog 满 512MB ➔ 数据”真正落盘”）"></a>2. Flush（默认 30 分钟或 Translog 满 512MB ➔ 数据”真正落盘”）</h3><ul>
+<li><strong>动作</strong>：调用操作系统的 <code>fsync</code>，把 Page Cache 里的所有 Segment 强制刷进物理硬盘，写入提交点（Commit Point），然后清空旧的 Translog。</li>
+<li><strong>架构精髓</strong>：用周期性的批量刷盘替代每次写入刷盘，大幅压低磁盘 I&#x2F;O。</li>
+</ul>
+<h3 id="3-Segment-Merge（后台持续进行-➔-合并碎文件-物理删除）"><a href="#3-Segment-Merge（后台持续进行-➔-合并碎文件-物理删除）" class="headerlink" title="3. Segment Merge（后台持续进行 ➔ 合并碎文件 + 物理删除）"></a>3. Segment Merge（后台持续进行 ➔ 合并碎文件 + 物理删除）</h3><ul>
+<li><strong>动作</strong>：每 1 秒 Refresh 就会产生一个新 Segment，一天下来会有几万个碎文件，严重拖慢查询。后台线程会自动把多个小 Segment 合并成一个大 Segment，并在此过程中<strong>真正物理清理掉被标记为 <code>deleted</code> 的旧文档</strong>。</li>
+<li><strong>日志写入优化铁律</strong>：</li>
+</ul>
+<ol>
+<li><strong>调大 <code>refresh_interval</code></strong>：日志与异常分析场景不需要 1 秒可搜，改成 <code>30s</code> 或 <code>60s</code>，生成 Segment 的频率直接降低 30 倍，写入吞吐翻倍。</li>
+<li><strong>禁止高频更新（Update）</strong>：因为 Segment 不可变，ES 的更新本质是 <strong>“旧文档打删除标 + 写入一条全新文档”</strong>，高频更新会引发极其惨烈的磁盘 Merge 风暴（这类场景应直接选 StarRocks 主键模型）。</li>
+</ol>
+<hr>
+<h2 id="二、深分页灾难（from-size）与三大解法"><a href="#二、深分页灾难（from-size）与三大解法" class="headerlink" title="二、深分页灾难（from + size）与三大解法"></a>二、深分页灾难（<code>from + size</code>）与三大解法</h2><h3 id="1-为什么-from-100000-size-10-会直接打挂-ES-节点？"><a href="#1-为什么-from-100000-size-10-会直接打挂-ES-节点？" class="headerlink" title="1. 为什么 from=100000, size=10 会直接打挂 ES 节点？"></a>1. 为什么 <code>from=100000, size=10</code> 会直接打挂 ES 节点？</h3><p>ES 是分散汇总（Scatter-Gather）架构，假设你的索引有 <strong>5 个分片（Shard）</strong>：</p>
+<ul>
+<li>当你请求第 <code>100,000</code> 到 <code>100,010</code> 条数据时，协调节点根本不知道全局第 10 万条落在哪个分片上。</li>
+<li>它只能命令<strong>每一个分片</strong>都在本地排序并取出 <strong>前 100,010 条</strong>（共 <code>5 × 100,010 = 500,050</code> 条完整文档）全部传回协调节点。</li>
+<li>协调节点在 JVM 堆内存里对这 <strong>50 万条数据做全局归并排序</strong>，最后只取 10 条返回，把其余 499,990 条全部扔掉。页码越深，内存和网络呈指数级放大，直接触发协调节点 <strong>OOM</strong>。</li>
+</ul>
+<h3 id="2-生产环境的三种标准解法"><a href="#2-生产环境的三种标准解法" class="headerlink" title="2. 生产环境的三种标准解法"></a>2. 生产环境的三种标准解法</h3><table>
+<thead>
+<tr>
+<th>解法</th>
+<th>核心原理</th>
+<th>适用场景与代价</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>1. <code>search_after</code>（生产绝对主力）</strong></td>
+<td><strong>游标翻页</strong>：拿着上一页最后一条数据的排序字段值（如 <code>[timestamp, _id]</code>），作为下一页的过滤条件（<code>WHERE time &lt; last_time</code>）。每个分片只需返回固定的 <code>10</code> 条，彻底消除内存膨胀。</td>
+<td><strong>适用</strong>：App 瀑布流下滑、”下一页”按钮。<br><strong>代价</strong>：只能顺序向后翻，<strong>不支持跳页</strong>（如直接点第 50 页）。</td>
+</tr>
+<tr>
+<td><strong>2. <code>PIT (Point In Time) + search_after</code></strong></td>
+<td><strong>固定数据视图</strong>：翻页前先创建一个轻量级时间点快照（PIT），保证用户在连续翻页过程中，不会因为新数据不断写入而出现分页数据重复或漏掉。</td>
+<td><strong>适用</strong>：高并发写入下的稳定深度遍历，或后台异步全量导出（替代已废弃的旧版 <code>Scroll API</code>）。</td>
+</tr>
+<tr>
+<td><strong>3. 业务层限流（产品止血）</strong></td>
+<td><strong>截断最大页码</strong>：保持 ES 默认限制 <code>index.max_result_window = 10000</code>（如每页 20 条，最多只允许看前 500 页）。</td>
+<td><strong>适用</strong>：面向人工排查的搜索框（类似百度&#x2F;淘宝限制最大页数），引导用户通过缩小时间范围或补充关键词精准过滤。</td>
+</tr>
+</tbody></table>
+<hr>
+<h1 id="串起来看"><a href="#串起来看" class="headerlink" title="串起来看"></a>串起来看</h1><h2 id="一句话总结（内核篇）"><a href="#一句话总结（内核篇）" class="headerlink" title="一句话总结（内核篇）"></a>一句话总结（内核篇）</h2><blockquote>
+<p>只要不加 <code>O_DIRECT</code>，内核对所有文件读写都执行”读时缓存、写时先暂存脏页、顺序读提前预读”；至于哪些该留、哪些该踢，全靠 <strong>LRU 淘汰算法</strong>让真正的热点文件自然沉淀在内存里。</p>
+</blockquote>
+<h2 id="一句话总结（ES-篇）"><a href="#一句话总结（ES-篇）" class="headerlink" title="一句话总结（ES 篇）"></a>一句话总结（ES 篇）</h2><blockquote>
+<p>ES 写入靠 <strong>1 秒 Refresh 进 Page Cache 换近实时</strong>、靠 <strong>后台 Merge 清理碎片</strong>（日志场景务必调大 Refresh 间隔）；查询靠 <strong><code>search_after</code> 游标</strong> 替代 <code>from + size</code>，彻底斩断分布式深分页的内存放大。</p>
+</blockquote>
+<h2 id="两者的本质联系"><a href="#两者的本质联系" class="headerlink" title="两者的本质联系"></a>两者的本质联系</h2><blockquote>
+<p><strong>ES 的”近实时”就是 Page Cache 的写回机制</strong>：写入先进内存页缓存换秒级可搜，再靠周期性的 <code>fsync</code>（Flush）批量落盘——这正是在第一篇里说的”先记账、后落盘”。理解了内核的 Page Cache，你就看穿了 ES 整个写入流水线的设计动机。</p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://busymoon.github.io/2026/09/29/page-cache-and-elasticsearch/" data-id="cuidFxqFb9x65BXD7lLv_DKTd" data-title="从 Page Cache 到 Elasticsearch：操作系统缓存与近实时写入的本质" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Elasticsearch/" rel="tag">Elasticsearch</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Page-Cache/" rel="tag">Page Cache</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-redis-three-classic-scenarios" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/09/29/redis-three-classic-scenarios/" class="article-date">
@@ -2585,79 +2716,11 @@
 
 
   
-    <article id="post-day4-summary" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/09/13/day4-summary/" class="article-date">
-  <time class="dt-published" datetime="2026-09-13T02:30:00.000Z" itemprop="datePublished">2026-09-13</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/09/13/day4-summary/">Day4 - 学习总结</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h3 id="今日-Agent-学习要点"><a href="#今日-Agent-学习要点" class="headerlink" title="今日 Agent 学习要点"></a>今日 Agent 学习要点</h3><p><strong>Q1：什么是 Skill？</strong><br>A：Agent 中一项可复用的能力，类似软件工程中的 Service &#x2F; Capability。</p>
-<p><strong>Q2：什么是 Prompt？</strong><br>A：指导 LLM 执行某个认知动作的 Instructions，是 Skill 的组成部分之一。</p>
-<p><strong>Q3：Skill 和 Prompt 的关系是什么？</strong><br>A：Skill ≠ Prompt。一个 Skill 可以包含 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Output Schema、Eval 等，也可以包含多次 LLM 调用。</p>
-<p><strong>Q4：Workflow 和 Skill 的关系是什么？</strong><br>A：Workflow 负责组织多个 Skill&#x2F;Tool 完成整体目标；Skill 负责提供具体能力。</p>
-<p><strong>Q5：Prompt、Context 的区别是什么？</strong><br>A：Prompt 决定“怎么做”；Context 决定“这一次做的时候知道什么”。</p>
-<p><strong>Q6：Taxonomy 是什么？</strong><br>A：定义系统中“有哪些概念&#x2F;答案”。</p>
-<p><strong>Q7：Decision Policy 是什么？</strong><br>A：定义如何根据证据从多个候选答案中做出判断。</p>
-<p><strong>Q8：Few-shot 是什么？</strong><br>A：通过具体案例向模型示范如何应用抽象的 Policy。</p>
-<p><strong>Q9：Tool 是什么？</strong><br>A：Agent 用于获取信息、执行计算、验证结果或改变外部环境的确定性能力。</p>
-<p><strong>Q10：什么时候应该用 Tool，而不是 LLM？</strong><br>A：能够通过确定性计算、查询、验证或转换得到的结果，优先交给 Tool。</p>
-<p><strong>Q11：Eval 是什么？</strong><br>A：衡量 Skill&#x2F;Agent 是否正确，以及修改后是否真正改善、是否产生 Regression。</p>
-<p><strong>Q12：Agent 的核心运行循环是什么？</strong><br>A：<code>Observe → Decide → Act → Observe</code>，直到 Goal 完成或终止。</p>
-<p><strong>Q13：Observe 是什么？</strong><br>A：Agent 获取当前环境、任务和工具执行结果等信息。</p>
-<p><strong>Q14：Decide 是什么？</strong><br>A：根据 Goal、State、Context、Policy 和 Available Actions 决定下一步行动。</p>
-<p><strong>Q15：Act 是什么？</strong><br>A：调用 Tool、Skill、Human 等执行 Decision，产生新的 Observation。</p>
-<p><strong>Q16：为什么同一个错误结果可能有不同原因？</strong><br>A：可能是 Observe 信息缺失、Decide 判断错误，也可能是 Act 执行错误，需要 Failure Decomposition。</p>
-<p><strong>Q17：什么是 State？</strong><br>A：描述当前任务“现在做到哪里、处于什么状态”。</p>
-<p><strong>Q18：什么是 Context？</strong><br>A：为了当前这一次 Decision，选择让模型看到的信息。</p>
-<p><strong>Q19：什么是 Memory？</strong><br>A：从过去经历中保留下来、未来任务可能再次使用的信息。</p>
-<p><strong>Q20：什么是 History？</strong><br>A：记录过去发生过什么；History 是“怎么走到这里”，State 是“现在在哪里”。</p>
-<p><strong>Q21：Memory 和 Knowledge 有什么区别？</strong><br>A：Memory 主要来自历史运行和交互经验；Knowledge 是相对稳定、权威、经过治理的外部知识。</p>
-<p><strong>Q22：Memory 是否一定要变成 Knowledge？</strong><br>A：不一定。只有经过审核、治理后，部分 Memory 才可能沉淀为正式 Knowledge。</p>
-<p><strong>Q23：Memory 如何影响未来 Decision？</strong><br>A：<code>Memory → Retrieval → Context → LLM → Decision</code>。</p>
-<p><strong>Q24：Memory 系统最核心的两个问题是什么？</strong><br>A：什么时候记（Memory Write Policy）和什么时候想起来（Memory Retrieval Policy）。</p>
-<p><strong>Q25：State、Context、Memory 最简单的记忆方式是什么？</strong><br>A：<code>State = Where am I?</code>；<code>Context = What do I need to know now?</code>；<code>Memory = What from the past should I remember?</code></p>
-<p><strong>Q26：Context 的信息可以来自哪里？</strong><br>A：State、Observation、History、Memory、Knowledge、Tool Results、用户输入等。</p>
-<p><strong>Q27：Context Engineering 的核心是什么？</strong><br>A：为当前 Goal + State + Decision 选择最合适的信息，而不是简单把所有信息塞给 LLM。</p>
-<p><strong>Q28：Agent 架构设计中的重要原则是什么？</strong><br>A：结果错误时不要默认“改 Prompt”，先定位错误属于 Prompt、Context、Taxonomy、Policy、Few-shot、Tool、Workflow、State&#x2F;Memory 还是其他层。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://busymoon.github.io/2026/09/13/day4-summary/" data-id="cuidjivb98RweqWp9hD64uKnZ" data-title="Day4 - 学习总结" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
 
 
   <nav id="page-nav">
     
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
   </nav>
 
 </section>
@@ -2671,7 +2734,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" rel="tag">概率算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Agent/" rel="tag">Agent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AgentScope/" rel="tag">AgentScope</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Crawl4AI/" rel="tag">Crawl4AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision/" rel="tag">Decision</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Decision-Boundary/" rel="tag">Decision Boundary</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Elasticsearch/" rel="tag">Elasticsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Page-Cache/" rel="tag">Page Cache</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReAct/" rel="tag">ReAct</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Skill/" rel="tag">Skill</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Taxonomy/" rel="tag">Taxonomy</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">代码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag">学习笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" rel="tag">提示词工程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" rel="tag">故障定位</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" rel="tag">概率算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1/" rel="tag">设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
     </div>
   </div>
 
@@ -2681,7 +2744,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 16.67px;">提示词工程</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 13.33px;">架构设计</a> <a href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" style="font-size: 10px;">概率算法</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+      <a href="/tags/Agent/" style="font-size: 20px;">Agent</a> <a href="/tags/AgentScope/" style="font-size: 10px;">AgentScope</a> <a href="/tags/Crawl4AI/" style="font-size: 10px;">Crawl4AI</a> <a href="/tags/Decision/" style="font-size: 10px;">Decision</a> <a href="/tags/Decision-Boundary/" style="font-size: 10px;">Decision Boundary</a> <a href="/tags/Elasticsearch/" style="font-size: 10px;">Elasticsearch</a> <a href="/tags/Page-Cache/" style="font-size: 10px;">Page Cache</a> <a href="/tags/ReAct/" style="font-size: 10px;">ReAct</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/Skill/" style="font-size: 10px;">Skill</a> <a href="/tags/Taxonomy/" style="font-size: 10px;">Taxonomy</a> <a href="/tags/%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">代码解析</a> <a href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">学习笔记</a> <a href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B/" style="font-size: 15px;">提示词工程</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 10px;">操作系统</a> <a href="/tags/%E6%95%85%E9%9A%9C%E5%AE%9A%E4%BD%8D/" style="font-size: 10px;">故障定位</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 15px;">架构设计</a> <a href="/tags/%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95/" style="font-size: 10px;">概率算法</a> <a href="/tags/%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">设计</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
     </div>
   </div>
 
@@ -2707,6 +2770,10 @@
           </li>
         
           <li>
+            <a href="/2026/09/29/page-cache-and-elasticsearch/">从 Page Cache 到 Elasticsearch：操作系统缓存与近实时写入的本质</a>
+          </li>
+        
+          <li>
             <a href="/2026/09/29/redis-three-classic-scenarios/">Redis 三大经典场景：分布式锁 / 秒杀扣减 / 实时排行榜</a>
           </li>
         
@@ -2716,10 +2783,6 @@
         
           <li>
             <a href="/2026/09/29/day9-3/">Day9 - 案例 1 · 第二课：ReAct 的结构性缺陷</a>
-          </li>
-        
-          <li>
-            <a href="/2026/09/18/day8_2/">从 Crawl4AI 理解 Agent：从抓取结果到动态规划</a>
           </li>
         
       </ul>
